@@ -1,0 +1,51 @@
+data_SYNTH
+#
+_struct.title 'Synthetic test structure; quoted "values" and multi-line text'
+_struct.pdbx_descriptor
+;Multi-line
+text value
+;
+#
+loop_
+_struct_conf.conf_type_id
+_struct_conf.id
+_struct_conf.beg_label_asym_id
+_struct_conf.beg_label_seq_id
+_struct_conf.end_label_asym_id
+_struct_conf.end_label_seq_id
+HELX_P HELX_P1 A 1 A 2
+TURN_TY1_P TURN1 B 2 B 2
+#
+_struct_sheet_range.sheet_id A
+_struct_sheet_range.id 1
+_struct_sheet_range.beg_label_asym_id B
+_struct_sheet_range.beg_label_seq_id 1
+_struct_sheet_range.end_label_asym_id B
+_struct_sheet_range.end_label_seq_id 1
+#
+loop_
+_atom_site.group_PDB
+_atom_site.id
+_atom_site.type_symbol
+_atom_site.label_atom_id
+_atom_site.label_alt_id
+_atom_site.label_comp_id
+_atom_site.label_asym_id
+_atom_site.label_seq_id
+_atom_site.pdbx_PDB_ins_code
+_atom_site.Cartn_x
+_atom_site.Cartn_y
+_atom_site.Cartn_z
+_atom_site.auth_seq_id
+_atom_site.auth_asym_id
+_atom_site.pdbx_PDB_model_num
+ATOM   1  N  N   . GLY A 1 ? -1.000 -2.000 -3.000 1 A 2
+ATOM   2  C  CA  . GLY A 1 ? -1.000 -2.000 -1.530 1 A 2
+ATOM   3  C  CA  A ALA A 2 ? -1.000 -2.000 1.000  2 A 2
+ATOM   4  C  CA  B ALA A 2 ? -9.000 -9.000 9.000  2 A 2
+ATOM   5  C  CA  . GLY B 1 ? -5.000 -5.000 -5.000 1 B 2
+ATOM   6  C  CA  . ALA B 2 ? -5.000 -5.000 -1.000 2 B 2
+HETATM 7  O  O   . HOH C . ? -7.000 -8.000 -6.000 100 A 2
+HETATM 8  O  O   . HOH C . ? -6.000 -8.000 -6.000 101 A 2
+HETATM 9  O  "O'" . "X Y" D . ? -7.500 -8.000 -6.000 200 A 2
+#

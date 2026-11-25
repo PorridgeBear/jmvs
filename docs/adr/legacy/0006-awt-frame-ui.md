@@ -2,6 +2,8 @@
 
 Status: Accepted (legacy)
 
+Superseded by [ADR 0005](../0005-scene2d-ui-native-file-dialog.md).
+
 ## Context
 Java3D's `Canvas3D` is an AWT heavyweight component. The project began in 1998/99 when AWT was the baseline.
 

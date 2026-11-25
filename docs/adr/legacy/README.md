@@ -14,3 +14,5 @@ Retrospective ADRs reverse-engineered from the code. Context/consequences are ev
 | [0008](0008-rebuild-geometry-on-every-change.md) | Rebuild geometry on every mode/paint change |
 
 Status values: Accepted (in force), with a note when it is a modernisation target. These are as-is (legacy) records. To-be ADRs go in `docs/adr/`; supersede rather than edit.
+
+Numbering restarts at 0001 in [`docs/adr/`](../README.md); to-be documents refer to these records as "legacy ADR-000n". Legacy 0001, 0002, 0004, 0006, 0007 and 0008 are superseded; 0003 and 0005 remain in force.

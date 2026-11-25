@@ -2,6 +2,8 @@
 
 Status: Accepted (performance limiter)
 
+Superseded by [ADR 0007](../0007-instanced-rendering-incremental-recolouring.md).
+
 ## Context
 Plugins return a complete `TransformGroup` for a molecule (`JMVSPlugin.render`). Paint mode is set on the plugin before rendering; `paint(TransformGroup, String)` exists but is unused (call commented out in `AppearanceManager.render`).
 

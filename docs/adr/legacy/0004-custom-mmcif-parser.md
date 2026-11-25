@@ -2,6 +2,8 @@
 
 Status: Accepted (fragile)
 
+Superseded by [ADR 0008](../0008-mmcif-via-ciftools-java.md).
+
 ## Context
 README (2022): "The molecular loader has been replaced with an all-new loader for the latest PDBx/mmCIF type and loads atoms, sheets and helices." Earlier format support is not present in this repo.
 

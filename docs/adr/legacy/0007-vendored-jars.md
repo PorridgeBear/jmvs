@@ -2,6 +2,8 @@
 
 Status: Accepted (risky)
 
+Superseded by [ADR 0010](../0010-maven-central-dependencies-only.md).
+
 ## Context
 README (2022): getting the sources to run on Apple M1 "was a headache but I managed to find some JARs that somebody had compiled for the M1"; "you'll need to add the appropriate JARs for gluegen and jogl for your architecture to app/libs". Java 11 is the latest supporting these jars.
 

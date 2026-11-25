@@ -2,6 +2,8 @@
 
 Status: Accepted (retrospective); **primary modernisation target**
 
+Superseded by [ADR 0004](../0004-libgdx-rendering-engine.md).
+
 ## Context
 The project (1998/99) set out to build a RasMol-like viewer in Java. README: "Java3D had just come about which abstracted low level OpenGL to a more abstract Scene Graph approach, though lower level primitives were possible."
 

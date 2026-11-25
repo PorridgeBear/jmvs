@@ -2,6 +2,8 @@
 
 Status: Accepted; partially realised
 
+Superseded by [ADR 0006](../0006-renderer-neutral-scene-and-display-mode-spi.md).
+
 ## Context
 README (2003): the code was "refactored ... around a plugin-oriented idea, more configurable, though never took this idea to its full extent, i.e. 3rd parties being able to drop in plugin jars".
 
