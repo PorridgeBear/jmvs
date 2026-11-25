@@ -26,7 +26,10 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-    systemProperty("jmvs.dataDir", rootProject.layout.projectDirectory.dir("data").asFile.absolutePath)
+    val dataDir = rootProject.layout.projectDirectory.dir("data")
+    // Sample files are test inputs, so changing them re-runs tests.
+    inputs.dir(dataDir).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("sampleData")
+    systemProperty("jmvs.dataDir", dataDir.asFile.absolutePath)
     testLogging {
         events("failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL

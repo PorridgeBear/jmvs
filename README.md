@@ -1,5 +1,17 @@
 # Java3D Molecular Visualisation System (JMVS)
 
+<table>
+  <tr>
+    <td align="center" width="20%"><a href="docs/images/1aon-balls-chain.png"><img src="docs/images/1aon-balls-chain.png" width="180" alt="1aon · 58,870 atoms"></a></td>
+    <td align="center" width="20%"><a href="docs/images/4hhb-ribbons-structure.png"><img src="docs/images/4hhb-ribbons-structure.png" width="180" alt="4hhb · ribbons"></a></td>
+    <td align="center" width="20%"><a href="docs/images/4hhb-bcif-balls-chain.png"><img src="docs/images/4hhb-bcif-balls-chain.png" width="180" alt="4hhb · BinaryCIF"></a></td>
+    <td align="center" width="20%"><a href="docs/images/3nir-sticks-cpk.png"><img src="docs/images/3nir-sticks-cpk.png" width="180" alt="3nir · hydrogens"></a></td>
+    <td align="center" width="20%"><a href="docs/images/1d3z-ribbons-structure.png"><img src="docs/images/1d3z-ribbons-structure.png" width="180" alt="1d3z · NMR models"></a></td>
+  </tr>
+</table>
+
+## Version comparison
+
 | 2026 | 2022 |
 |---|---|
 | ![1usc.cif balls, CPK (2026)](docs/images/1usc-balls-cpk.png) | ![1usc.cif balls, CPK (2022)](docs/images/legacy/1usc-balls-cpk.png) |
@@ -28,7 +40,7 @@ atoms are drawn with GPU instancing.
 
 **Features**
 * Balls and sticks mode is back, and every colour scheme works in every mode (except CPK for ribbons).
-* Turns are read and coloured in structure mode.
+* Turns are read and coloured in structure mode when a file marks them (few modern PDB files do).
 * Click an atom to highlight it and see its element, residue, chain and coordinates.
 * Pan and reset the view, open files with the native dialog or by dropping them on the window, and read `.cif.gz`
   and BinaryCIF files.
@@ -47,10 +59,47 @@ atoms are drawn with GPU instancing.
 **Robustness and maintainability**
 * A bad file shows an error and the app keeps running. In 2022 the app simply exited.
 * No more console output per atom and per bond, and no dependence on the directory the app is started from.
-* 46 automated tests, plus a GitHub Actions workflow to run them on macOS, Windows and Linux.
+* Over 50 automated tests, plus a GitHub Actions workflow to run them on macOS, Windows and Linux.
 * Rendering is separated from the molecule model, so display modes are easy to add.
 * There are no copied third-party sources or JARs in the new code, and dependency checksums are verified.
 * The architecture and the decisions behind it are documented (see below).
+
+### New sample structures
+
+Five structures were added to [`data/`](data/README.md) to show off the changes (click a thumbnail for the full image):
+
+<table>
+  <tr>
+    <td align="center" valign="top" width="20%">
+      <a href="docs/images/1aon-balls-chain.png"><img src="docs/images/1aon-balls-chain.png" width="180" alt="1aon balls, chain"></a><br>
+      <sub><b>1aon</b> · balls, chain<br>58,870 atoms in 35 chains, rotating at 43 fps: about 60 times the atom count where 2022 slowed down.</sub>
+    </td>
+    <td align="center" valign="top" width="20%">
+      <a href="docs/images/4hhb-ribbons-structure.png"><img src="docs/images/4hhb-ribbons-structure.png" width="180" alt="4hhb ribbons, structure"></a><br>
+      <sub><b>4hhb</b> · ribbons, structure<br>Haemoglobin's helices, assigned per chain. 2022 matched helices by residue number across all chains.</sub>
+    </td>
+    <td align="center" valign="top" width="20%">
+      <a href="docs/images/4hhb-bcif-balls-chain.png"><img src="docs/images/4hhb-bcif-balls-chain.png" width="180" alt="4hhb.bcif balls, chain"></a><br>
+      <sub><b>4hhb.bcif</b> · balls, chain<br>Loaded from BinaryCIF. Each chain, haem group and water set has its own stable colour.</sub>
+    </td>
+    <td align="center" valign="top" width="20%">
+      <a href="docs/images/3nir-sticks-cpk.png"><img src="docs/images/3nir-sticks-cpk.png" width="180" alt="3nir sticks, CPK"></a><br>
+      <sub><b>3nir</b> · sticks, CPK<br>Crambin at 0.48 Å, with hydrogens (white). Alternate atom positions aren't duplicated.</sub>
+    </td>
+    <td align="center" valign="top" width="20%">
+      <a href="docs/images/1d3z-ribbons-structure.png"><img src="docs/images/1d3z-ribbons-structure.png" width="180" alt="1d3z ribbons, structure"></a><br>
+      <sub><b>1d3z</b> · ribbons, structure<br>Ubiquitin NMR: all 10 models drawn overlaid, showing how much the structure varies.</sub>
+    </td>
+  </tr>
+</table>
+
+| File | Shows off | Result |
+|---|---|---|
+| `4hhb.bcif` (haemoglobin, BinaryCIF) | BinaryCIF reading | Identical to the text file: 14 chains, 4,779 atoms, 4,574 bonds |
+| `1aon.cif.gz` (GroEL–GroES, ~59k atoms) | Performance at scale | Loads in 0.65 s; 43 fps in balls mode, 211 fps in ribbons (Apple Silicon, Retina resolution) |
+| `4hhb.cif` (haemoglobin) | Helices assigned per chain; chain colours; haem groups | Four helix-rich chains, each coloured correctly |
+| `3nir.cif` (crambin at 0.48 Å) | Hydrogens and alternate atom positions | 534 alternate-position rows reduced to 784 atoms, with no duplicates |
+| `1d3z.cif` (ubiquitin, NMR) | Multiple models and hydrogens | All 10 models load and are drawn overlaid (there's no model picker yet) |
 
 ### How it was modernised
 

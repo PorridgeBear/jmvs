@@ -39,7 +39,7 @@ class CovalentBonderParityTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"1crn.cif", "1usc.cif", "6l1f.cif"})
+    @ValueSource(strings = {"1crn.cif", "1usc.cif", "6l1f.cif", "4hhb.bcif", "3nir.cif", "1d3z.cif"})
     void gridBondsEqualAllPairsBonds(String file) throws Exception {
         assertParity(file);
     }

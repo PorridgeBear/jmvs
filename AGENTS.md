@@ -13,7 +13,7 @@ Guidance for AI coding agents and contributors working on JMVS, a RasMol-like 3D
 | `legacy-app/` | Legacy Java3D application, frozen; deleted at cutover |
 | `build-logic/` | `jmvs.java-conventions` plugin (Java 25 toolchain, JUnit, `-Werror`) |
 | `gradle/libs.versions.toml`, `gradle/verification-metadata.xml` | Dependency versions and checksums |
-| `data/` | Sample mmCIF structures (`1crn`, `1usc`, `1zpd`, `6l1f`); used by tests |
+| `data/` | Sample structures used by tests and for trying the viewer; see [`data/README.md`](data/README.md) for why each is there |
 | `docs/arc42/`, `docs/adr/` | To-be architecture and decisions |
 | `docs/arc42/legacy/`, `docs/adr/legacy/` | As-is documentation of the legacy app |
 
@@ -62,7 +62,7 @@ Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`. Scheme ids: `cpk`, `ch
 ## Testing
 
 - Tests in `jmvs-core`, `jmvs-scene` and `jmvs-app` (controller) must run without a GPU or display.
-- Use files in `data/` as golden inputs (tests read the `jmvs.dataDir` system property); assert counts, chains, secondary structure and bonds.
+- Use files in `data/` as golden inputs; document any new file in `data/README.md` and give it golden values (tests read the `jmvs.dataDir` system property); assert counts, chains, secondary structure and bonds.
 - Compilation uses `-Xlint:all -Werror`: fix warnings rather than suppressing them.
 - Add or update tests with every behaviour change.
 
