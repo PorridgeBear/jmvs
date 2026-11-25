@@ -13,4 +13,4 @@ Retrospective ADRs reverse-engineered from the code. Context/consequences are ev
 | [0007](0007-vendored-jars.md) | Vendored Java3D/JOGL jars |
 | [0008](0008-rebuild-geometry-on-every-change.md) | Rebuild geometry on every mode/paint change |
 
-Status values: Accepted (in force), with a note when it is a modernisation target. Add new ADRs as `NNNN-title.md`; supersede rather than edit.
+Status values: Accepted (in force), with a note when it is a modernisation target. These are as-is (legacy) records. To-be ADRs go in `docs/adr/`; supersede rather than edit.
