@@ -176,7 +176,7 @@ To run:
 
 Note, you'll need to add the appropriate JARs for gluegen and jogl for your architecture to app/libs.
 
-*(2026: this version now lives in `legacy-app/` and runs with `./gradlew :legacy-app:run`; see 2026 above.)*
+*(2026: these commands are out of date. Use the Gradle wrapper, `./gradlew`, rather than a separately installed `gradle`. This version now lives in `legacy-app/` and runs with `./gradlew :legacy-app:run`; the new app runs with `./gradlew :jmvs-app:run`. See 2026 above.)*
 
 ### New additions
 
