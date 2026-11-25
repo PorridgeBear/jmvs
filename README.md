@@ -13,10 +13,44 @@
 ## 2026
 
 JMVS has been modernised: Java 25, a multi-module Gradle 9 build, and [libGDX](https://libgdx.com/) in place of
-Java3D, so it now runs on macOS, Windows and Linux without hand-picked JARs. Structures load with RCSB's
-[ciftools-java](https://github.com/rcsb/ciftools-java) (including `.cif.gz` and BinaryCIF), bonding uses a spatial
-grid with the same RasMol rules, and atoms are drawn with GPU instancing, so a 20,000-atom structure rotates
-smoothly. Balls and sticks is back, turns are coloured, and atoms can be picked with a click.
+Java3D, so it no longer depends on hand-picked JARs. Structures load with RCSB's
+[ciftools-java](https://github.com/rcsb/ciftools-java), bonding uses a spatial grid with the same RasMol rules, and
+atoms are drawn with GPU instancing.
+
+### What's better than 2022
+
+**Performance**
+* A 20,000-atom structure (`1zpd`) rotates at 96 fps in balls mode, and faster in the other modes (Apple Silicon Mac,
+  Retina resolution). The 2022 version struggled from around 1,000 atoms.
+* Bonding no longer compares every pair of atoms: loading and bonding `1zpd` takes about 0.1–0.2 s.
+* Changing the colour scheme only updates colours instead of rebuilding the whole scene.
+* Files load in the background, so the window stays responsive.
+
+**Features**
+* Balls and sticks mode is back, and every colour scheme works in every mode (except CPK for ribbons).
+* Turns are read and coloured in structure mode.
+* Click an atom to highlight it and see its element, residue, chain and coordinates.
+* Pan and reset the view, open files with the native dialog or by dropping them on the window, and read `.cif.gz`
+  and BinaryCIF files.
+* Builds for macOS, Windows and Linux, with native installers that bundle Java. So far only the macOS one has
+  been tried.
+
+**Correctness**
+* Helices and sheets are applied only to their own chain. Previously they were matched by residue number across
+  all chains, so multi-chain structures were coloured wrongly.
+* The bounds and centring maths is fixed, and model numbers no longer have to start at 1.
+* The mmCIF reading handles quoted and multi-line values, and keeps one position per atom where a file lists
+  alternatives, so those atoms are no longer duplicated.
+* Bonds are tested to be exactly those of the original RasMol-style rules on every sample file.
+* Chain colours are the same every run (they were random), and Asn/Gln are cyan as the colour table intended.
+
+**Robustness and maintainability**
+* A bad file shows an error and the app keeps running. In 2022 the app simply exited.
+* No more console output per atom and per bond, and no dependence on the directory the app is started from.
+* 46 automated tests, plus a GitHub Actions workflow to run them on macOS, Windows and Linux.
+* Rendering is separated from the molecule model, so display modes are easy to add.
+* There are no copied third-party sources or JARs in the new code, and dependency checksums are verified.
+* The architecture and the decisions behind it are documented (see below).
 
 ### How it was modernised
 
