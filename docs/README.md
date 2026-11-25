@@ -8,10 +8,11 @@
 | ADRs | [`adr/legacy/`](adr/legacy/README.md) | [`adr/`](adr/README.md) |
 | Plan | — | [`modernisation.md`](modernisation.md) |
 | Gap analysis | — | [`swot.md`](swot.md) (JMVS vs. what scientists need in 2026) |
+| Feature roadmap | — | [`roadmap.md`](roadmap.md) (ordered feature slices from the gap analysis) |
 
 The **legacy** docs describe the current Java3D-based system. They were reverse-engineered from source, build files and `README.md` ahead of the modernisation. Nothing in them was supplied by the original author unless stated; rationale not stated in the code or README is marked **[Inferred]** and unverified facts **[Assumption]**. Snapshot: commit `cae0dba`, ~3,900 lines of Java in `app/src`. Legacy docs are not edited, except for *Superseded by* lines on legacy ADRs.
 
-The **to-be** docs describe the target architecture: Java 25, a multi-module Gradle 9 build, libGDX rendering with a Scene2D UI, ciftools-java for mmCIF, and native installers. [`modernisation.md`](modernisation.md) is the roadmap with phase status and maps each legacy risk and debt to its fix.
+The **to-be** docs describe the target architecture: Java 25, a multi-module Gradle 9 build, libGDX rendering with a Scene2D UI, ciftools-java for mmCIF, and native installers. [`modernisation.md`](modernisation.md) is the modernisation plan with phase status and maps each legacy risk and debt to its fix.
 
 ADR numbering restarts at 0001 in `adr/`; legacy records are referred to as "legacy ADR-000n". Guidance for contributors and AI agents is in [`AGENTS.md`](../AGENTS.md).
 

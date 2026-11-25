@@ -111,4 +111,4 @@ viewer for teaching and quick inspection, including of AlphaFold models.
 
 The quickest gains are the small, high-value items: pLDDT/B-factor colouring, fetch by ID, a model picker and image
 export. The medium items (DSSP, cartoon, measurements, assemblies) would then cover most everyday viewing needs.
-Record each as an ADR and a new phase in [modernisation.md](modernisation.md) when picked up.
+These are ordered into feature slices in [roadmap.md](roadmap.md).
