@@ -7,6 +7,7 @@
 | arc42 | [`arc42/legacy/`](arc42/legacy/) | [`arc42/`](#to-be-arc42) |
 | ADRs | [`adr/legacy/`](adr/legacy/README.md) | [`adr/`](adr/README.md) |
 | Plan | — | [`modernisation.md`](modernisation.md) |
+| Gap analysis | — | [`swot.md`](swot.md) (JMVS vs. what scientists need in 2026) |
 
 The **legacy** docs describe the current Java3D-based system. They were reverse-engineered from source, build files and `README.md` ahead of the modernisation. Nothing in them was supplied by the original author unless stated; rationale not stated in the code or README is marked **[Inferred]** and unverified facts **[Assumption]**. Snapshot: commit `cae0dba`, ~3,900 lines of Java in `app/src`. Legacy docs are not edited, except for *Superseded by* lines on legacy ADRs.
 
