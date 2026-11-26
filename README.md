@@ -44,8 +44,8 @@ atoms are drawn with GPU instancing.
 * Click an atom to highlight it and see its element, residue, chain and coordinates.
 * Pan and reset the view, open files with the native dialog or by dropping them on the window, and read `.cif.gz`
   and BinaryCIF files.
-* Builds for macOS, Windows and Linux, with native installers that bundle Java. So far only the macOS one has
-  been tried.
+* Builds for macOS, Windows and Linux, with native installers that bundle Java. CI installs each one and renders a
+  structure with it.
 
 **Correctness**
 * Helices and sheets are applied only to their own chain. Previously they were matched by residue number across
@@ -131,9 +131,18 @@ I want to be open about this: the modernisation was done with GitHub Copilot, us
    Where reality differed from the plan (for example, needing a newer LWJGL for Java 25, or macOS threading), the
    ADRs were updated to say so.
 
-What's left is in [docs/modernisation.md](docs/modernisation.md): running CI and the installers on Windows and
-Linux, and then retiring the original Java3D app in `legacy-app/`. Tag `legacy-java3d` marks the code as it was
-before all this.
+The modernisation is complete ([docs/modernisation.md](docs/modernisation.md)); what's next is in the
+[roadmap](docs/roadmap.md). The original Java3D app is kept for posterity in `legacy-app/`, and tag `legacy-java3d`
+marks the code as it was before all this.
+
+### Installing
+
+Download the installer for your OS from the [latest release](https://github.com/PorridgeBear/jmvs/releases/latest):
+`.dmg` (macOS), `.msi` (Windows) or `.deb` (Debian/Ubuntu). They include Java, so nothing else is needed.
+
+The installers are not signed. On macOS, if JMVS "cannot be opened", go to System Settings > Privacy & Security and
+choose *Open Anyway* (or run `xattr -dr com.apple.quarantine /Applications/JMVS.app`). On Windows, choose *More info*
+then *Run anyway* if SmartScreen warns about the installer.
 
 ### Building and running
 
@@ -154,7 +163,7 @@ To build a native installer with a bundled Java runtime (`.dmg`, `.msi` or `.deb
 
 	./gradlew :jmvs-app:jpackage
 
-The legacy app still runs on macOS with `./gradlew :legacy-app:run`.
+The legacy app is a separate build and still runs on macOS with `./gradlew -p legacy-app run`.
 
 ## 2022
 
@@ -176,7 +185,7 @@ To run:
 
 Note, you'll need to add the appropriate JARs for gluegen and jogl for your architecture to app/libs.
 
-*(2026: these commands are out of date. Use the Gradle wrapper, `./gradlew`, rather than a separately installed `gradle`. This version now lives in `legacy-app/` and runs with `./gradlew :legacy-app:run`; the new app runs with `./gradlew :jmvs-app:run`. See 2026 above.)*
+*(2026: these commands are out of date. Use the Gradle wrapper, `./gradlew`, rather than a separately installed `gradle`. This version now lives in `legacy-app/` and runs with `./gradlew -p legacy-app run`; the new app runs with `./gradlew :jmvs-app:run`. See 2026 above.)*
 
 ### New additions
 

@@ -7,7 +7,7 @@ The legacy build has no pinned toolchain, uses Gradle 7.5.1 and is capped at JDK
 
 ## Decision
 - Target **Java 25 LTS** for all new modules, compiled through a Gradle Java toolchain (`languageVersion = 25`), so the installed JDK is irrelevant to the bytecode level.
-- Use the **Gradle 9** wrapper (9.9.x at time of writing) with the foojay toolchain resolver plugin so missing JDKs (25, and 11 for `legacy-app`) are provisioned automatically.
+- Use the **Gradle 9** wrapper (9.9.x at time of writing) with the foojay toolchain resolver plugin so missing JDKs (25, and 11 for the archived standalone `legacy-app` build) are provisioned automatically.
 - Gradle itself runs on whatever JDK 17–27 is installed (Gradle 9.9 supports running on JDK 27). If a future local JDK is newer than Gradle supports, pin the daemon JVM with `gradle/gradle-daemon-jvm.properties` (`./gradlew updateDaemonJvm --jvm-version=25`).
 - `-Pjmvs.javaVersion=<n>` overrides the toolchain version, for trying newer JDKs in CI without changing the baseline.
 - Declare all dependency and plugin versions in `gradle/libs.versions.toml`; shared build logic lives in the `jmvs.java-conventions` plugin under `build-logic/`.

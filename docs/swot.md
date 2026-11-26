@@ -19,7 +19,7 @@ describe the field in general, not a feature-by-feature audit of those tools.
 | Assemblies | Asymmetric unit only; no biological assemblies or crystal symmetry |
 | Output | PNG screenshot and frame-rate benchmark via command-line options (`--screenshot`, `--benchmark`); no export from the UI |
 | Scripting | None |
-| Platforms | Desktop: macOS (verified), Windows and Linux (built in CI, not yet tried). Installers bundle Java |
+| Platforms | Desktop: macOS, Windows and Linux; CI builds, tests and smoke-tests the installers on all three. Installers bundle Java |
 | Performance | 59k atoms at 43 fps in balls mode, 211 fps in ribbons (Apple Silicon, see [arc42 §10](arc42/10-quality-requirements.md)) |
 
 ### Display modes

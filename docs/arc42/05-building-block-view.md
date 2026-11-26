@@ -12,7 +12,7 @@ flowchart TB
     core --> cif[(ciftools-java)]
     render --> gdx[(libGDX / LWJGL3)]
     app --> gdx
-    legacy[legacy-app<br/>until cutover]
+    legacy[legacy-app<br/>archived, standalone build]
 ```
 
 | Module | Responsibility | Key packages |
@@ -21,7 +21,7 @@ flowchart TB
 | `jmvs-scene` | Scene data types; display modes (Balls, Sticks, Balls-and-sticks, Ribbons); colour schemes (CPK, Chain, Group, Structure); registry; viewer config; ray picking | `scene`, `scene.mode`, `scene.colour`, `scene.config` |
 | `jmvs-render-gdx` | Upload scene data to GPU, instanced drawing, ribbon meshes, lighting, GLSL setup, orbit camera, screen-to-ray picking | `render` |
 | `jmvs-app` | Launcher and options; `ViewerController` state; Scene2D menus, status bar, dialogs; async loading; file dialog; drag-and-drop; packaging | `app`, `app.ui` |
-| `legacy-app` | Legacy Java3D app, frozen; removed at cutover | `com.adcworks.jmvs` (legacy) |
+| `legacy-app` | Legacy Java3D app, archived as a standalone build (not in the root build) | `com.adcworks.jmvs` (legacy) |
 
 ## Level 2 — `jmvs-core`
 

@@ -54,10 +54,10 @@ jobs:
         uses: ssciwr/setup-mesa-dist-win@v3
       - name: Install virtual display (Linux)
         if: runner.os == 'Linux'
-        # The headless runner has no system menu directory, which the .deb's menu shortcut needs.
+        # The headless runner has no system menu directories, which the .deb's menu shortcut needs.
         run: |
           sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri
-          sudo mkdir -p /usr/share/applications
+          sudo mkdir -p /etc/xdg/menus /usr/share/applications
       - name: Smoke test installer
         shell: bash
         env:

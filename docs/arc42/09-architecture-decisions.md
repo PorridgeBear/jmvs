@@ -6,7 +6,7 @@ Full records live in [`../adr/`](../adr/README.md). Legacy records are in [`../a
 |---|---|---|
 | [0001](../adr/0001-java-25-gradle-9-toolchains.md) | Java 25 LTS, Gradle 9 toolchains, version catalog | Accepted |
 | [0002](../adr/0002-multi-module-build.md) | Multi-module build with one-way dependencies | Accepted |
-| [0003](../adr/0003-strangler-migration-legacy-module.md) | Legacy app kept as a module until parity | Accepted (temporary) |
+| [0003](../adr/0003-strangler-migration-legacy-module.md) | Legacy app kept as a module until parity; then archived as a standalone build | Completed |
 | [0004](../adr/0004-libgdx-rendering-engine.md) | libGDX on LWJGL3 for rendering | Accepted; supersedes legacy 0001 |
 | [0005](../adr/0005-scene2d-ui-native-file-dialog.md) | Scene2D UI, native file dialog | Accepted; supersedes legacy 0006 |
 | [0006](../adr/0006-renderer-neutral-scene-and-display-mode-spi.md) | Renderer-neutral scene; display-mode and colour-scheme SPI | Accepted; supersedes legacy 0002 |
