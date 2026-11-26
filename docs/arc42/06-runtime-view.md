@@ -52,6 +52,14 @@ Menu → `ViewerController.setScheme(id)` → compute a colour per instance/vert
 
 Menu → `ViewerController.setMode(id)` → use cached `Scene` for that mode or build it → `setScene` + `setColours`. Camera is not reset.
 
+## Change secondary structure source
+
+*Display* menu (or `--ss`) → `ViewerController.setSecondaryStructureSource(source)` → on the background executor,
+`SecondaryStructures.apply` to the structure as read (computing with `DsspAssigner` for *Computed*, or *Auto* on an
+unannotated file) and build the current mode's scene → `postRunnable`: cached scenes replaced, `sceneChanged` with
+fresh colours. Atom indices are unchanged, so the selection and surface stay. Opening a file applies the chosen source
+during the load.
+
 ## Show a surface
 
 *Surface* menu (or `--surface`) → `ViewerController.setSurface(kind)` → cached `Surface` for that kind, or status

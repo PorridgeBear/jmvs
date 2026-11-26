@@ -8,6 +8,7 @@ import com.adcworks.jmvs.scene.config.SurfaceSettings;
 import com.adcworks.jmvs.scene.config.ViewerConfig;
 import com.adcworks.jmvs.scene.mode.BallsAndSticksMode;
 import com.adcworks.jmvs.scene.mode.BallsMode;
+import com.adcworks.jmvs.scene.mode.CartoonMode;
 import com.adcworks.jmvs.scene.mode.DisplayMode;
 import com.adcworks.jmvs.scene.mode.RibbonsMode;
 import com.adcworks.jmvs.scene.mode.SticksMode;
@@ -16,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * The display modes and colour schemes enabled by configuration, in menu order, and the surface settings. To add a
@@ -25,11 +25,12 @@ import java.util.function.Supplier;
 public record Registry(List<DisplayMode> modes, DisplayMode defaultMode, List<ColourScheme> schemes,
                        ColourScheme defaultScheme, SurfaceSettings surface) {
 
-    private static final Map<String, Supplier<DisplayMode>> MODES = Map.of(
-            "balls", BallsMode::new,
-            "sticks", SticksMode::new,
-            "ballsandsticks", BallsAndSticksMode::new,
-            "ribbons", RibbonsMode::new);
+    private static final Map<String, Function<ViewerConfig, DisplayMode>> MODES = Map.of(
+            "balls", config -> new BallsMode(),
+            "sticks", config -> new SticksMode(),
+            "ballsandsticks", config -> new BallsAndSticksMode(),
+            "ribbons", config -> new RibbonsMode(),
+            "cartoon", config -> new CartoonMode(config.cartoon()));
 
     private static final Map<String, Function<ColourTables, ColourScheme>> SCHEMES = Map.of(
             "cpk", ColourSchemes::cpk,
@@ -54,11 +55,11 @@ public record Registry(List<DisplayMode> modes, DisplayMode defaultMode, List<Co
 
     public static Registry create(ViewerConfig config, ColourTables tables) {
         List<DisplayMode> modes = config.modes().stream().map(id -> {
-            Supplier<DisplayMode> factory = MODES.get(id);
+            Function<ViewerConfig, DisplayMode> factory = MODES.get(id);
             if (factory == null) {
                 throw new ConfigurationException("Unknown display mode '" + id + "'; known: " + MODES.keySet());
             }
-            return factory.get();
+            return factory.apply(config);
         }).toList();
         List<ColourScheme> schemes = config.schemes().stream().map(id -> {
             Function<ColourTables, ColourScheme> factory = SCHEMES.get(id);

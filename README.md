@@ -1,10 +1,24 @@
 # JMVS: Java Molecular Visualisation System
 
 A [RasMol](http://www.openrasmol.org/)-like 3D viewer for macromolecular structures, for macOS, Windows and Linux.
-Open a PDBx/mmCIF file, then rotate it, show it as balls, sticks or ribbons, wrap it in a molecular surface, and
+Open a PDBx/mmCIF file, then rotate it, show it as balls, sticks, ribbons or cartoon, wrap it in a molecular surface, and
 colour it by element, chain, residue, secondary structure, B-factor or AlphaFold confidence.
 
 <table>
+  <tr>
+    <td align="center" valign="top" width="33%">
+      <a href="docs/images/4hhb-cartoon-chain.png"><img src="docs/images/4hhb-cartoon-chain.png" width="260" alt="4hhb cartoon, chain"></a><br>
+      <sub><b>Cartoon</b><br>Haemoglobin (<code>4hhb</code>): helices as thick ribbons, coloured by chain</sub>
+    </td>
+    <td align="center" valign="top" width="33%">
+      <a href="docs/images/1usc-cartoon-structure.png"><img src="docs/images/1usc-cartoon-structure.png" width="260" alt="1usc cartoon, structure"></a><br>
+      <sub><b>Sheets with arrows</b><br><code>1usc</code> in cartoon: strands end in arrowheads, coil is a tube</sub>
+    </td>
+    <td align="center" valign="top" width="33%">
+      <a href="docs/images/1bna-cartoon-chain.png"><img src="docs/images/1bna-cartoon-chain.png" width="260" alt="1bna cartoon, chain"></a><br>
+      <sub><b>DNA</b><br>B-DNA dodecamer (<code>1bna</code>): backbone tubes through the phosphates, a block per base</sub>
+    </td>
+  </tr>
   <tr>
     <td align="center" valign="top" width="33%">
       <a href="docs/images/4hhb-surface-chain.png"><img src="docs/images/4hhb-surface-chain.png" width="260" alt="4hhb solvent-excluded surface, chain"></a><br>
@@ -25,8 +39,8 @@ colour it by element, chain, residue, secondary structure, B-factor or AlphaFold
       <sub><b>Balls, at scale</b><br>GroEL–GroES (<code>1aon</code>): 58,870 atoms in 35 chains, rotating smoothly</sub>
     </td>
     <td align="center" valign="top" width="33%">
-      <a href="docs/images/4hhb-ribbons-structure.png"><img src="docs/images/4hhb-ribbons-structure.png" width="260" alt="4hhb ribbons, structure"></a><br>
-      <sub><b>Ribbons</b><br>Haemoglobin's helices, coloured by secondary structure</sub>
+      <a href="docs/images/af-p69905-noss-ribbons-structure.png"><img src="docs/images/af-p69905-noss-ribbons-structure.png" width="260" alt="AlphaFold model without annotation, ribbons, computed secondary structure"></a><br>
+      <sub><b>Computed secondary structure</b><br>Ribbons of an AlphaFold model with no annotation in the file: helices and turns assigned from backbone hydrogen bonds</sub>
     </td>
     <td align="center" valign="top" width="33%">
       <a href="docs/images/1crn-ballsandsticks-cpk.png"><img src="docs/images/1crn-ballsandsticks-cpk.png" width="260" alt="1crn balls and sticks, CPK"></a><br>
@@ -54,18 +68,22 @@ colour it by element, chain, residue, secondary structure, B-factor or AlphaFold
 ## Features
 
 **Display**
-* Four display modes: balls (space-filling), sticks, balls and sticks, and ribbons (Carson–Bugg).
+* Five display modes: balls (space-filling), sticks, balls and sticks, ribbons (Carson–Bugg, as in RasMol), and
+  cartoon: thick helix ribbons, strands with arrowheads, coil tubes, and nucleic acids as a backbone tube with base
+  blocks.
 * Molecular surfaces, solvent-excluded or solvent-accessible, drawn over any display mode, opaque or transparent.
   They are computed in the background: haemoglobin takes about a quarter of a second, the 59,000-atom `1aon`
   1–2 seconds.
 * Colour schemes: CPK (element), chain, group (residue), secondary structure, B-factor, and confidence (pLDDT) for
   AlphaFold and other predicted models, with a colour legend. Every scheme works with every mode and with surfaces,
-  except CPK for ribbons.
+  except CPK for ribbons and cartoon.
 
 **Structures**
 * PDBx/mmCIF files, plain, gzipped (`.cif.gz`) or BinaryCIF (`.bcif`), read with RCSB's
   [ciftools-java](https://github.com/rcsb/ciftools-java).
-* Covalent bonds inferred with RasMol's rules; helices, sheets and turns read from the file and applied per chain.
+* Covalent bonds inferred with RasMol's rules; helices, sheets and turns read from the file and applied per chain,
+  or computed from backbone hydrogen bonds (a DSSP subset) when the file has none, as in predicted models. The
+  *Display* menu or `--ss` chooses *Auto*, *From file* or *Computed*.
 * Hydrogens, alternate atom positions (one kept per atom) and multi-model NMR files (models drawn overlaid).
 
 **Interaction**
@@ -76,7 +94,7 @@ colour it by element, chain, residue, secondary structure, B-factor or AlphaFold
 
 **Performance**
 * GPU instancing: a 20,000-atom structure (`1zpd`) rotates at 96 fps in balls mode and faster in the others, and the
-  59,000-atom `1aon` at 43 fps (Apple Silicon Mac, Retina resolution).
+  59,000-atom `1aon` at 43 fps in balls and 184 fps in cartoon (Apple Silicon Mac, Retina resolution).
 * Changing colour scheme only updates colours; geometry is never rebuilt for it.
 
 ## Installing
@@ -105,11 +123,12 @@ R resets the view, Esc clears the selection.
 
 Options choose the view from the command line, or render one screenshot or measure the frame rate and exit:
 
-	jmvs [file] [--mode <id>] [--scheme <id>] [--surface ses|sas] [--surface-opacity <0-1>]
-	     [--screenshot <png>] [--benchmark <seconds>]
+	jmvs [file] [--mode <id>] [--scheme <id>] [--ss auto|file|computed] [--surface ses|sas]
+	     [--surface-opacity <0-1>] [--screenshot <png>] [--benchmark <seconds>]
 
-Mode ids are `balls`, `sticks`, `ballsandsticks` and `ribbons`; scheme ids are `cpk`, `chain`, `group`, `structure`,
-`bfactor` and `confidence`. For example, after `./gradlew :jmvs-app:installDist`:
+Mode ids are `balls`, `sticks`, `ballsandsticks`, `ribbons` and `cartoon`; scheme ids are `cpk`, `chain`, `group`, `structure`,
+`bfactor` and `confidence`. `--ss` chooses where secondary structure comes from: the file's annotation if it has
+any (`auto`, the default), the file only, or computed. For example, after `./gradlew :jmvs-app:installDist`:
 
 	jmvs-app/build/install/jmvs/bin/jmvs data/4hhb.cif --mode ribbons --scheme chain --surface ses --screenshot 4hhb.png
 

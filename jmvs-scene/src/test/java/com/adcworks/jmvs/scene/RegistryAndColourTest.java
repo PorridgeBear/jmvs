@@ -29,7 +29,7 @@ class RegistryAndColourTest {
     @Test
     void registersConfiguredModesAndSchemesInOrderWithDefaults() {
         assertThat(registry.modes()).extracting(DisplayMode::id)
-                .containsExactly("balls", "sticks", "ballsandsticks", "ribbons");
+                .containsExactly("balls", "sticks", "ballsandsticks", "ribbons", "cartoon");
         assertThat(registry.schemes()).extracting(ColourScheme::id)
                 .containsExactly("cpk", "chain", "group", "structure", "bfactor", "confidence");
         assertThat(registry.defaultMode().id()).isEqualTo("balls");
@@ -119,9 +119,9 @@ class RegistryAndColourTest {
     @Test
     void rejectsInvalidConfiguration() {
         Properties p = ViewerConfig.loadProperties();
-        p.setProperty("display.modes", "balls,cartoon");
+        p.setProperty("display.modes", "balls,spacefill");
         assertThatThrownBy(() -> Registry.create(ViewerConfig.parse(p), ColourTables.parse(p)))
-                .isInstanceOf(ConfigurationException.class).hasMessageContaining("cartoon");
+                .isInstanceOf(ConfigurationException.class).hasMessageContaining("spacefill");
 
         Properties q = ViewerConfig.loadProperties();
         q.setProperty("display.default", "ribbons2");

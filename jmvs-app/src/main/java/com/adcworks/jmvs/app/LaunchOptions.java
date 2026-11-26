@@ -1,22 +1,25 @@
 package com.adcworks.jmvs.app;
 
+import com.adcworks.jmvs.core.model.SecondaryStructureSource;
 import com.adcworks.jmvs.scene.surface.SurfaceKind;
 
 import java.nio.file.Path;
 import java.util.Optional;
 
 /**
- * Command-line options: {@code jmvs [file] [--mode <id>] [--scheme <id>] [--surface ses|sas]
- * [--surface-opacity <0-1>] [--screenshot <png>] [--benchmark <seconds>]}. {@code --screenshot} renders the file
+ * Command-line options: {@code jmvs [file] [--mode <id>] [--scheme <id>] [--ss auto|file|computed]
+ * [--surface ses|sas] [--surface-opacity <0-1>] [--screenshot <png>] [--benchmark <seconds>]}. {@code --screenshot} renders the file
  * once (after its surface, if any, is computed), writes a PNG and exits (visual checks); {@code --benchmark} rotates
- * the structure with vsync off, logs the average frame rate and exits.
+ * the structure with vsync off, logs the average frame rate and exits. {@code --ss} chooses where secondary
+ * structure comes from (default {@code auto}: the file's annotation, else computed).
  */
 public record LaunchOptions(Optional<Path> file, Optional<String> mode, Optional<String> scheme,
-                            Optional<SurfaceKind> surface, Optional<Float> surfaceOpacity,
+                            Optional<SecondaryStructureSource> secondaryStructure, Optional<SurfaceKind> surface,
+                            Optional<Float> surfaceOpacity,
                             Optional<Path> screenshot, Optional<Integer> benchmarkSeconds) {
 
-    public static final String USAGE = "Usage: jmvs [file] [--mode <id>] [--scheme <id>] [--surface ses|sas]"
-            + " [--surface-opacity <0-1>] [--screenshot <png>] [--benchmark <seconds>]";
+    public static final String USAGE = "Usage: jmvs [file] [--mode <id>] [--scheme <id>] [--ss auto|file|computed]"
+            + " [--surface ses|sas] [--surface-opacity <0-1>] [--screenshot <png>] [--benchmark <seconds>]";
 
     public static LaunchOptions parse(String[] args) {
         Path file = null;
@@ -24,12 +27,18 @@ public record LaunchOptions(Optional<Path> file, Optional<String> mode, Optional
         String scheme = null;
         Path screenshot = null;
         Integer benchmark = null;
+        SecondaryStructureSource secondaryStructure = null;
         SurfaceKind surface = null;
         Float opacity = null;
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--mode" -> mode = value(args, ++i, "--mode");
                 case "--scheme" -> scheme = value(args, ++i, "--scheme");
+                case "--ss" -> {
+                    String id = value(args, ++i, "--ss");
+                    secondaryStructure = SecondaryStructureSource.byId(id).orElseThrow(
+                            () -> new IllegalArgumentException("--ss must be auto, file or computed, not " + id));
+                }
                 case "--surface" -> {
                     String id = value(args, ++i, "--surface");
                     surface = SurfaceKind.byId(id).orElseThrow(
@@ -65,7 +74,7 @@ public record LaunchOptions(Optional<Path> file, Optional<String> mode, Optional
             throw new IllegalArgumentException("--screenshot and --benchmark need a structure file");
         }
         return new LaunchOptions(Optional.ofNullable(file), Optional.ofNullable(mode), Optional.ofNullable(scheme),
-                Optional.ofNullable(surface), Optional.ofNullable(opacity), Optional.ofNullable(screenshot),
+                Optional.ofNullable(secondaryStructure), Optional.ofNullable(surface), Optional.ofNullable(opacity), Optional.ofNullable(screenshot),
                 Optional.ofNullable(benchmark));
     }
 

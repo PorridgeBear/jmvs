@@ -1,10 +1,12 @@
 package com.adcworks.jmvs.app;
 
+import com.adcworks.jmvs.core.chem.SecondaryStructures;
 import com.adcworks.jmvs.core.io.StructureReadException;
 import com.adcworks.jmvs.core.io.StructureReaders;
 import com.adcworks.jmvs.core.model.Atom;
 import com.adcworks.jmvs.core.model.Chain;
 import com.adcworks.jmvs.core.model.Residue;
+import com.adcworks.jmvs.core.model.SecondaryStructureSource;
 import com.adcworks.jmvs.core.model.Structure;
 import com.adcworks.jmvs.scene.Registry;
 import com.adcworks.jmvs.scene.Scene;
@@ -60,7 +62,7 @@ public final class ViewerController {
         void surfaceOpacityChanged(float opacity);
     }
 
-    private record Loaded(Structure structure, Scene scene, int[] colours) {
+    private record Loaded(Structure read, Structure structure, Scene scene, int[] colours) {
     }
 
     private final StructureReaders readers;
@@ -69,7 +71,15 @@ public final class ViewerController {
     private final Executor ui;
     private final Listener listener;
 
+    /** The structure as read from the file, with the file's secondary structure. */
+    private Structure read;
+    /** The structure shown: {@link #read}, or a copy with computed secondary structure. */
     private Structure structure;
+    private final SecondaryStructures secondaryStructures = new SecondaryStructures();
+    private SecondaryStructureSource secondaryStructureSource = SecondaryStructureSource.AUTO;
+    private int secondaryStructureGeneration;
+    /** The source {@link #structure} was produced with. */
+    private SecondaryStructureSource shownSource = SecondaryStructureSource.AUTO;
     private DisplayMode mode;
     private ColourScheme preferredScheme;
     private final Map<String, Scene> scenes = new HashMap<>();
@@ -117,6 +127,16 @@ public final class ViewerController {
         return selection;
     }
 
+    /** Where secondary structure comes from; it stays chosen when another file is opened. */
+    public SecondaryStructureSource secondaryStructureSource() {
+        return secondaryStructureSource;
+    }
+
+    /** Whether the shown structure's secondary structure was computed rather than read from the file. */
+    public boolean isSecondaryStructureComputed() {
+        return structure != null && structure != read;
+    }
+
     public boolean isLoading() {
         return loading;
     }
@@ -149,12 +169,15 @@ public final class ViewerController {
         listener.loadingStarted(path.getFileName().toString());
         DisplayMode modeAtStart = mode;
         ColourScheme schemeAtStart = scheme();
+        SecondaryStructureSource sourceAtStart = secondaryStructureSource;
         background.execute(() -> {
             try {
-                Structure loaded = readers.read(path);
+                Structure fromFile = readers.read(path);
+                Structure loaded = secondaryStructures.apply(fromFile, sourceAtStart);
                 Scene scene = modeAtStart.build(loaded);
                 int[] colours = schemeAtStart.colours(loaded);
-                ui.execute(() -> shown(generation, new Loaded(loaded, scene, colours), modeAtStart, schemeAtStart));
+                ui.execute(() -> shown(generation, new Loaded(fromFile, loaded, scene, colours), modeAtStart,
+                        schemeAtStart, sourceAtStart));
             } catch (StructureReadException e) {
                 LOG.log(System.Logger.Level.WARNING, "Cannot open " + path, e);
                 ui.execute(() -> failed(generation, e.getMessage()));
@@ -180,6 +203,21 @@ public final class ViewerController {
         preferredScheme = registry.scheme(id);
         if (structure != null) {
             listener.coloursChanged(scheme().colours(structure));
+        }
+    }
+
+    /**
+     * Chooses where secondary structure comes from. Applying it (computing if needed) and rebuilding the scene run in
+     * the background; the listener then gets {@link Listener#sceneChanged}. Atom indices, the selection and surfaces
+     * are kept.
+     */
+    public void setSecondaryStructureSource(SecondaryStructureSource source) {
+        if (source == secondaryStructureSource) {
+            return;
+        }
+        secondaryStructureSource = source;
+        if (!loading) {
+            requestSecondaryStructure();
         }
     }
 
@@ -243,6 +281,39 @@ public final class ViewerController {
         return scenes.computeIfAbsent(mode.id(), id -> mode.build(structure));
     }
 
+    private void requestSecondaryStructure() {
+        int generation = ++secondaryStructureGeneration;
+        if (read == null) {
+            return;
+        }
+        Structure target = read;
+        SecondaryStructureSource source = secondaryStructureSource;
+        DisplayMode modeAtStart = mode;
+        background.execute(() -> {
+            try {
+                Structure applied = secondaryStructures.apply(target, source);
+                Scene scene = modeAtStart.build(applied);
+                ui.execute(() -> secondaryStructureApplied(generation, target, applied, source, modeAtStart,
+                        scene));
+            } catch (RuntimeException e) {
+                LOG.log(System.Logger.Level.ERROR, "Cannot assign secondary structure of " + target.name(), e);
+                ui.execute(() -> listener.loadFailed("Cannot assign secondary structure: " + e));
+            }
+        });
+    }
+
+    private void secondaryStructureApplied(int generation, Structure appliedTo, Structure applied,
+                                           SecondaryStructureSource source, DisplayMode builtFor, Scene scene) {
+        if (generation != secondaryStructureGeneration || appliedTo != read) {
+            return;
+        }
+        structure = applied;
+        shownSource = source;
+        scenes.clear();
+        scenes.put(builtFor.id(), scene);
+        listener.sceneChanged(scene(), scheme().colours(structure));
+    }
+
     private void requestSurface() {
         int generation = surfaceGeneration.incrementAndGet();
         if (structure == null) {
@@ -284,7 +355,8 @@ public final class ViewerController {
     }
 
     private void surfaceBuilt(int generation, Structure builtFor, Surface surface) {
-        if (generation != surfaceGeneration.get() || builtFor != structure) {
+        // Same atoms: secondary structure may have been re-applied meanwhile, which does not change the surface.
+        if (generation != surfaceGeneration.get() || structure == null || builtFor.atoms() != structure.atoms()) {
             return;
         }
         surfaces.put(surface.kind(), surface);
@@ -300,12 +372,15 @@ public final class ViewerController {
         listener.loadFailed(message);
     }
 
-    private void shown(int generation, Loaded loaded, DisplayMode builtFor, ColourScheme colouredWith) {
+    private void shown(int generation, Loaded loaded, DisplayMode builtFor, ColourScheme colouredWith,
+                       SecondaryStructureSource appliedSource) {
         if (generation != loadGeneration) {
             return;
         }
         loading = false;
+        read = loaded.read();
         structure = loaded.structure();
+        shownSource = appliedSource;
         scenes.clear();
         scenes.put(builtFor.id(), loaded.scene());
         surfaces.clear();
@@ -316,6 +391,10 @@ public final class ViewerController {
         listener.structureShown(scene, colours);
         listener.selectionChanged(selection);
         requestSurface();
+        // The source may have changed while loading.
+        if (shownSource != secondaryStructureSource) {
+            requestSecondaryStructure();
+        }
     }
 
     private void failed(int generation, String message) {
@@ -324,6 +403,10 @@ public final class ViewerController {
         }
         loading = false;
         listener.loadFailed(message);
+        // The source may have changed while loading; apply it to the structure still shown.
+        if (read != null && shownSource != secondaryStructureSource) {
+            requestSecondaryStructure();
+        }
         // The load cancelled the current structure's surface build.
         requestSurface();
     }

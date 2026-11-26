@@ -21,6 +21,8 @@ Decisions for the modernised JMVS. The as-is records live in [`legacy/`](legacy/
 | [0015](0015-typed-properties-configuration.md) | Typed configuration from classpath properties | Accepted | Refines legacy 0005 |
 | [0016](0016-bfactor-confidence-colouring-and-legends.md) | B-factor in the model, confidence colouring and colour-scheme legends | Accepted | |
 | [0017](0017-molecular-surfaces.md) | Molecular surfaces: grid distance fields, surface nets and a background overlay | Accepted | |
+| [0018](0018-computed-secondary-structure.md) | Computed secondary structure: a DSSP subset, applied when the file has none | Accepted | |
+| [0019](0019-cartoon-representation.md) | Cartoon representation: swept superellipse sections, indexed meshes | Accepted | |
 
 Legacy ADRs 0003 (RasMol-derived chemistry) and 0005 (properties configuration) stay in force.
 
