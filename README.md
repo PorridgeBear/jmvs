@@ -2,7 +2,8 @@
 
 A [RasMol](http://www.openrasmol.org/)-like 3D viewer for macromolecular structures, for macOS, Windows and Linux.
 Open a PDBx/mmCIF file, then rotate it, show it as balls, sticks, ribbons or cartoon, wrap it in a molecular surface, and
-colour it by element, chain, residue, secondary structure, B-factor or AlphaFold confidence.
+colour it by element, chain, residue, secondary structure, B-factor or AlphaFold confidence. Open a cryo-EM density map
+with it to see how the model fits.
 
 <table>
   <tr>
@@ -43,8 +44,8 @@ colour it by element, chain, residue, secondary structure, B-factor or AlphaFold
       <sub><b>Computed secondary structure</b><br>Ribbons of an AlphaFold model with no annotation in the file: helices and turns assigned from backbone hydrogen bonds</sub>
     </td>
     <td align="center" valign="top" width="33%">
-      <a href="docs/images/1crn-ballsandsticks-cpk.png"><img src="docs/images/1crn-ballsandsticks-cpk.png" width="260" alt="1crn balls and sticks, CPK"></a><br>
-      <sub><b>Balls and sticks</b><br>Crambin (<code>1crn</code>) in RasMol's CPK element colours</sub>
+      <a href="docs/images/5me2-sticks-chain-map.png"><img src="docs/images/5me2-sticks-chain-map.png" width="260" alt="cryo-EM map EMD-3488 as a mesh around the 5me2 model in sticks"></a><br>
+      <sub><b>Cryo-EM density map</b><br>Haemoglobin at 3.2 Å (EMD-3488) as a mesh around its fitted model (<code>5me2</code>), coloured by the nearest chain; the contour level is adjustable</sub>
     </td>
   </tr>
   <tr>
@@ -74,6 +75,10 @@ colour it by element, chain, residue, secondary structure, B-factor or AlphaFold
 * Molecular surfaces, solvent-excluded or solvent-accessible, drawn over any display mode, opaque or transparent.
   They are computed in the background: haemoglobin takes about a quarter of a second, the 59,000-atom `1aon`
   1–2 seconds.
+* Cryo-EM density maps (MRC/CCP4, as from [EMDB](https://www.ebi.ac.uk/emdb/), plain or gzipped) shown as a mesh
+  or surface, opaque or transparent, with or without a model. Drag the contour slider or press `[` / `]` to change the
+  level; it is shown in map units and σ. The map takes each colour from the nearest model atom, so it follows the
+  colour scheme.
 * Colour schemes: CPK (element), chain, group (residue), secondary structure, B-factor, and confidence (pLDDT) for
   AlphaFold and other predicted models, with a colour legend. Every scheme works with every mode and with surfaces,
   except CPK for ribbons and cartoon.
@@ -119,18 +124,23 @@ To run (optionally with a file; you can also use File > Open or drop a file on t
 	./gradlew :jmvs-app:run --args="data/1crn.cif"
 
 Controls: left-drag rotates, right-drag or scroll zooms, middle-drag or Shift+left-drag pans, click selects an atom,
-R resets the view, Esc clears the selection.
+R resets the view, Esc clears the selection, `[` and `]` lower and raise a density map's contour (Shift for bigger
+steps).
 
 Options choose the view from the command line, or render one screenshot or measure the frame rate and exit:
 
-	jmvs [file] [--mode <id>] [--scheme <id>] [--ss auto|file|computed] [--surface ses|sas]
-	     [--surface-opacity <0-1>] [--screenshot <png>] [--benchmark <seconds>]
+	jmvs [file] [map] [--mode <id>] [--scheme <id>] [--ss auto|file|computed] [--surface ses|sas]
+	     [--surface-opacity <0-1>] [--map <file>] [--contour <level>|<n>sigma] [--map-style surface|mesh]
+	     [--map-opacity <0-1>] [--screenshot <png>] [--benchmark <seconds>]
 
 Mode ids are `balls`, `sticks`, `ballsandsticks`, `ribbons` and `cartoon`; scheme ids are `cpk`, `chain`, `group`, `structure`,
 `bfactor` and `confidence`. `--ss` chooses where secondary structure comes from: the file's annotation if it has
 any (`auto`, the default), the file only, or computed. For example, after `./gradlew :jmvs-app:installDist`:
 
 	jmvs-app/build/install/jmvs/bin/jmvs data/4hhb.cif --mode ribbons --scheme chain --surface ses --screenshot 4hhb.png
+	jmvs-app/build/install/jmvs/bin/jmvs data/5me2.cif data/emd_3488.map.gz --mode sticks --scheme chain --contour 0.09
+
+A file ending in `.map`, `.mrc` or `.ccp4` (optionally `.gz`) opens as a density map; the contour starts at 2.5σ.
 
 To build a native installer with a bundled Java runtime (`.dmg`, `.msi` or `.deb` for the current OS):
 

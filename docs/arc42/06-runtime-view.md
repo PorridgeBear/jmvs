@@ -68,6 +68,16 @@ A newer request (other kind, None, another file) bumps a generation counter; the
 check and its result is dropped. Opening a file keeps the chosen kind and rebuilds it for the new structure. Colour
 scheme changes recolour the surface with the scene; opacity changes only set a uniform.
 
+## Show a density map
+
+File > Open, drag-and-drop, a positional `.map`/`.mrc`/`.ccp4` file or `--map` → `ViewerController.openMap` →
+`MrcMapReader` on the background executor → `postRunnable`: the map is kept and the level set to `--contour` or
+`density.sigma` σ → `IsosurfaceBuilder` and `ZoneColouring` in the background → `StructureRenderer.setDensity`.
+Moving the contour slider or pressing `[` / `]` starts a new build; a generation counter stops superseded builds and
+the previous contour stays on screen until the new one arrives. Opening another structure keeps the map: the contour
+is shown in the map colour, then re-zoned for the new atoms without re-meshing. Without a structure, the camera frames
+the first contour.
+
 ## Pick an atom
 
 Click (without drag) → `ScreenPicker` casts a ray, `Picking` finds the nearest pick target → controller updates selection → renderer sets the highlight flag; status bar shows atom details. Clicking empty space or pressing Esc clears the selection.

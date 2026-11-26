@@ -9,10 +9,11 @@ import java.util.Properties;
 
 /**
  * Viewer settings from {@code jmvs.properties}: enabled display modes and colour schemes (by id, in menu order),
- * the defaults, molecular surface settings and cartoon dimensions.
+ * the defaults, molecular surface settings, cartoon dimensions and density map settings.
  */
 public record ViewerConfig(List<String> modes, String defaultMode, List<String> schemes, String defaultScheme,
-                           SurfaceSettings surface, CartoonSettings cartoon) {
+                           SurfaceSettings surface, CartoonSettings cartoon,
+                           DensitySettings density) {
 
     public ViewerConfig {
         modes = List.copyOf(modes);
@@ -35,7 +36,7 @@ public record ViewerConfig(List<String> modes, String defaultMode, List<String> 
     public static ViewerConfig parse(Properties p) {
         return new ViewerConfig(list(p, "display.modes"), required(p, "display.default"),
                 list(p, "colour.schemes"), required(p, "colour.default"), SurfaceSettings.parse(p),
-                CartoonSettings.parse(p));
+                CartoonSettings.parse(p), DensitySettings.parse(p));
     }
 
     private static List<String> list(Properties p, String key) {

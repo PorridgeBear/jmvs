@@ -1,10 +1,12 @@
 package com.adcworks.jmvs.app.ui;
 
 import com.adcworks.jmvs.app.ViewerController;
+import com.adcworks.jmvs.core.map.DensityMap;
 import com.adcworks.jmvs.core.model.SecondaryStructureSource;
 import com.adcworks.jmvs.scene.colour.ColourScheme;
 import com.adcworks.jmvs.scene.colour.Legend;
 import com.adcworks.jmvs.scene.colour.Rgb;
+import com.adcworks.jmvs.scene.density.DensityStyle;
 import com.adcworks.jmvs.scene.mode.DisplayMode;
 import com.adcworks.jmvs.scene.surface.SurfaceKind;
 import com.badlogic.gdx.graphics.Color;
@@ -21,6 +23,7 @@ import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuBar;
 import com.kotcrab.vis.ui.widget.MenuItem;
 import com.kotcrab.vis.ui.widget.VisLabel;
+import com.kotcrab.vis.ui.widget.VisSlider;
 import com.kotcrab.vis.ui.widget.VisTable;
 
 import java.util.EnumMap;
@@ -32,8 +35,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Scene2D overlay: menu bar (File, Display, Colour, Surface, View, Help), a colour legend for schemes that have one,
- * and a status bar.
+ * Scene2D overlay: menu bar (File, Display, Colour, Surface, Map, View, Help), a colour legend for schemes that have
+ * one, a contour level slider while a density map is shown, and a status bar.
  */
 public final class ViewerUi {
 
@@ -50,7 +53,11 @@ public final class ViewerUi {
 
     private static final String CURRENT = "> ";
     private static final String OTHER = "   ";
-    private static final String HINT = "Open a structure with File > Open or drop a file on the window";
+    private static final String HINT = "Open a structure or density map with File > Open or drop a file on the window";
+    /** Contour slider range and step, in standard deviations above the map's mean. */
+    private static final float SLIDER_MIN_SIGMA = -1f;
+    private static final float SLIDER_MAX_SIGMA = 15f;
+    private static final float SLIDER_STEP_SIGMA = 0.05f;
     private static final int GRADIENT_STEPS = 32;
     private static final Map<String, Float> OPACITIES = Map.of("Opaque", 1f, "70%", 0.7f, "40%", 0.4f);
     private static final List<String> OPACITY_ORDER = List.of("Opaque", "70%", "40%");
@@ -63,6 +70,14 @@ public final class ViewerUi {
             new EnumMap<>(SecondaryStructureSource.class);
     private final Map<Optional<SurfaceKind>, MenuItem> surfaceItems = new HashMap<>();
     private final Map<String, MenuItem> opacityItems = new HashMap<>();
+    private final Map<DensityStyle, MenuItem> densityStyleItems = new EnumMap<>(DensityStyle.class);
+    private final Map<String, MenuItem> densityOpacityItems = new HashMap<>();
+    private final MenuItem closeMap;
+    private final VisTable contourPanel = new VisTable();
+    private final VisSlider contourSlider = new VisSlider(SLIDER_MIN_SIGMA, SLIDER_MAX_SIGMA, SLIDER_STEP_SIGMA,
+            false);
+    private final VisLabel contourLabel = new VisLabel("");
+    private DensityMap sliderMap;
     private final VisLabel status = new VisLabel(HINT);
     private final VisLabel selection = new VisLabel("");
     private final VisLabel fps = new VisLabel("");
@@ -127,6 +142,42 @@ public final class ViewerUi {
         }
         menuBar.addMenu(surface);
 
+        Menu density = new Menu("Map");
+        density.addItem(item("Open map...", actions::openFile));
+        closeMap = item("Close map", () -> {
+            controller.closeMap();
+            refresh();
+        });
+        density.addItem(closeMap);
+        density.addSeparator();
+        for (DensityStyle style : DensityStyle.values()) {
+            MenuItem item = item(style.displayName(), () -> {
+                controller.setDensityStyle(style);
+                refresh();
+            });
+            densityStyleItems.put(style, item);
+            density.addItem(item);
+        }
+        density.addSeparator();
+        for (String label : OPACITY_ORDER) {
+            MenuItem item = item(label, () -> {
+                controller.setDensityOpacity(OPACITIES.get(label));
+                refresh();
+            });
+            densityOpacityItems.put(label, item);
+            density.addItem(item);
+        }
+        density.addSeparator();
+        density.addItem(item("Raise contour", () -> {
+            controller.stepContourLevel(1);
+            refresh();
+        }).setShortcut("]"));
+        density.addItem(item("Lower contour", () -> {
+            controller.stepContourLevel(-1);
+            refresh();
+        }).setShortcut("["));
+        menuBar.addMenu(density);
+
         Menu view = new Menu("View");
         view.addItem(item("Reset view", actions::resetView).setShortcut("R"));
         view.addItem(item("Clear selection", () -> controller.select(java.util.OptionalInt.empty()))
@@ -139,7 +190,8 @@ public final class ViewerUi {
                 Right-drag or scroll: zoom
                 Middle-drag or Shift + left-drag: pan
                 Click: select atom
-                R: reset view    Esc: clear selection    Ctrl/Cmd+O: open""")));
+                R: reset view    Esc: clear selection    Ctrl/Cmd+O: open
+                [ / ]: lower / raise the map contour (Shift: 5 steps)""")));
         help.addItem(item("About JMVS", () -> Dialogs.showOKDialog(stage, "About JMVS", """
                 JMVS - Java Molecular Visualisation System
                 A RasMol-like 3D molecular viewer.
@@ -156,12 +208,28 @@ public final class ViewerUi {
         legendPanel.setBackground("window-bg");
         legendPanel.pad(6);
         legendPanel.setVisible(false);
+        contourPanel.setBackground("window-bg");
+        contourPanel.pad(6);
+        contourPanel.add(new VisLabel("Contour")).padRight(8);
+        contourPanel.add(contourSlider).width(220).padRight(8);
+        contourPanel.add(contourLabel).width(150).left();
+        contourPanel.setVisible(false);
+        contourSlider.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                controller.map().ifPresent(map -> {
+                    controller.setContourLevel(map.statistics().level(contourSlider.getValue()));
+                    refresh();
+                });
+            }
+        });
 
         Table root = new Table();
         root.setFillParent(true);
-        root.add(menuBar.getTable()).expandX().fillX().row();
-        root.add(legendPanel).expand().bottom().left().pad(8).row();
-        root.add(statusBar).expandX().fillX();
+        root.add(menuBar.getTable()).colspan(2).expandX().fillX().row();
+        root.add(legendPanel).expand().bottom().left().pad(8);
+        root.add(contourPanel).bottom().right().pad(8).row();
+        root.add(statusBar).colspan(2).expandX().fillX();
         stage.addActor(root);
         refresh();
     }
@@ -202,7 +270,7 @@ public final class ViewerUi {
      * Updates menu markers and status text from the controller state.
      */
     public void refresh() {
-        if (!controller.isLoading()) {
+        if (!controller.isLoading() && !controller.isMapLoading()) {
             loadingName = null;
         }
         String modeId = controller.mode().id();
@@ -223,6 +291,13 @@ public final class ViewerUi {
             item.setText((OPACITIES.get(label) == controller.surfaceOpacity() ? CURRENT : OTHER) + label);
             item.setDisabled(controller.surfaceKind().isEmpty());
         });
+        boolean hasMap = controller.map().isPresent();
+        closeMap.setDisabled(!hasMap);
+        densityStyleItems.forEach((style, item) ->
+                item.setText((style == controller.densityStyle() ? CURRENT : OTHER) + style.displayName()));
+        OPACITY_ORDER.forEach(label -> densityOpacityItems.get(label).setText(
+                (OPACITIES.get(label) == controller.densityOpacity() ? CURRENT : OTHER) + label));
+        refreshContourPanel();
 
         String text = controller.structure().map(s -> "%s  |  %d atoms, %d chains  |  %s, %s".formatted(
                 s.name(), s.atoms().size(), s.distinctChainIds(), controller.mode().displayName(),
@@ -234,6 +309,12 @@ public final class ViewerUi {
             text += controller.isSurfaceBuilding() ? "  |  Computing surface..."
                     : "  |  " + controller.surfaceKind().get().displayName() + " surface";
         }
+        if (controller.map().isPresent()) {
+            DensityMap map = controller.map().get();
+            text = (controller.structure().isPresent() ? text + "  |  " : "") + map.name() + "  "
+                    + (controller.isDensityBuilding() && controller.density().isEmpty() ? "contouring..."
+                    : contourText(map, controller.contourLevel()));
+        }
         if (loadingName != null) {
             text = "Loading " + loadingName + "...";
         }
@@ -241,6 +322,33 @@ public final class ViewerUi {
         selection.setText(controller.selection().isPresent()
                 ? controller.describe(controller.selection().getAsInt()) : "");
         showLegend(controller.legend().orElse(null));
+    }
+
+    private void refreshContourPanel() {
+        Optional<DensityMap> map = controller.map();
+        contourPanel.setVisible(map.isPresent());
+        if (map.isEmpty()) {
+            sliderMap = null;
+            return;
+        }
+        DensityMap.Statistics stats = map.get().statistics();
+        // Moving the slider from code must not set the level.
+        contourSlider.setProgrammaticChangeEvents(false);
+        if (sliderMap != map.get()) {
+            sliderMap = map.get();
+            // Up to the map's maximum, but at least a little above the current level.
+            float top = Math.max(Math.min(SLIDER_MAX_SIGMA, stats.sigma(stats.max())),
+                    stats.sigma(controller.contourLevel()) + 1);
+            contourSlider.setRange(SLIDER_MIN_SIGMA, top);
+        }
+        contourSlider.setValue(stats.sigma(controller.contourLevel()));
+        contourSlider.setProgrammaticChangeEvents(true);
+        contourLabel.setText(contourText(map.get(), controller.contourLevel()));
+    }
+
+    /** Level and its standard deviations above the mean; "sigma" in words, as the UI font has no σ. */
+    private static String contourText(DensityMap map, float level) {
+        return String.format(Locale.ROOT, "%.4g (%.2f sigma)", level, map.statistics().sigma(level));
     }
 
     private void showLegend(Legend legend) {

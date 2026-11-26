@@ -1,24 +1,25 @@
-package com.adcworks.jmvs.scene.surface;
+package com.adcworks.jmvs.scene.mesh;
 
 import java.util.Arrays;
 import java.util.concurrent.CancellationException;
 import java.util.function.BooleanSupplier;
 
 /**
- * Extracts the zero level set of a scalar field (negative inside) as a welded triangle mesh with naive surface nets:
+ * Extracts a level set of a scalar field as a welded triangle mesh with naive surface nets:
  * one vertex per grid cube the surface crosses, at the mean of the cube's edge crossings, and one quad per crossed
  * grid edge joining the four cubes around it. Compared with marching cubes it needs no case tables and gives fewer,
  * better-shaped triangles. Triangles wind counter-clockwise seen from outside; normals are the normalised field
- * gradient, interpolated from central differences at the grid points.
+ * gradient, interpolated from central differences at the grid points, pointing outward. Quads are emitted as
+ * consecutive triangle pairs (triangles {@code 2q} and {@code 2q + 1}), which {@link MeshChunks} keeps together.
  */
-final class SurfaceNets {
+public final class SurfaceNets {
 
     /**
      * Welded mesh: 3 floats per vertex in {@code positions} and {@code normals}, 3 vertex indices per triangle.
      */
-    record Mesh(float[] positions, float[] normals, int[] triangles) {
+    public record Mesh(float[] positions, float[] normals, int[] triangles) {
 
-        int vertexCount() {
+        public int vertexCount() {
             return positions.length / 3;
         }
     }
@@ -34,7 +35,22 @@ final class SurfaceNets {
     private SurfaceNets() {
     }
 
-    static Mesh extract(Grid grid, float[] field, BooleanSupplier cancelled) {
+    /**
+     * The zero level set of a field that is negative inside, such as a signed distance.
+     */
+    public static Mesh extract(Grid grid, float[] field, BooleanSupplier cancelled) {
+        return extract(grid, field, 0, false, cancelled);
+    }
+
+    /**
+     * The surface where {@code field} crosses {@code level}, with the inside where it is above {@code level}
+     * ({@code insideAbove}, as for density) or below it. Throws {@link CancellationException} between slabs when
+     * {@code cancelled} returns true.
+     */
+    public static Mesh extract(Grid grid, float[] field, float level, boolean insideAbove,
+                               BooleanSupplier cancelled) {
+        // Internally the field is signed: negative inside, zero on the surface.
+        Field signed = new Field(field, level, insideAbove ? -1 : 1);
         if (field.length != grid.size()) {
             throw new IllegalArgumentException("field has " + field.length + " values, grid has " + grid.size());
         }
@@ -59,7 +75,7 @@ final class SurfaceNets {
                 for (int x = 0; x < nx - 1; x++) {
                     int mask = 0;
                     for (int c = 0; c < 8; c++) {
-                        corner[c] = field[grid.index(x + (c & 1), y + ((c >> 1) & 1), z + ((c >> 2) & 1))];
+                        corner[c] = signed.at(grid.index(x + (c & 1), y + ((c >> 1) & 1), z + ((c >> 2) & 1)));
                         if (corner[c] < 0) {
                             mask |= 1 << c;
                         }
@@ -84,28 +100,28 @@ final class SurfaceNets {
                     w /= crossings;
                     current[x + cubesX * y] = positions.size() / 3;
                     positions.add(grid.x(x) + u * s, grid.y(y) + v * s, grid.z(z) + w * s);
-                    gradient(grid, field, x, y, z, u, v, w, gradient);
+                    gradient(grid, signed, x, y, z, u, v, w, gradient);
                     normals.add(gradient[0], gradient[1], gradient[2]);
                 }
             }
             for (int y = 0; y < ny - 1; y++) {
                 for (int x = 0; x < nx - 1; x++) {
-                    float origin = field[grid.index(x, y, z)];
+                    float origin = signed.at(grid.index(x, y, z));
                     boolean inside = origin < 0;
                     // Edge along x: cubes around it are offset in y and z.
-                    if (y > 0 && z > 0 && inside != (field[grid.index(x + 1, y, z)] < 0)) {
+                    if (y > 0 && z > 0 && inside != (signed.at(grid.index(x + 1, y, z)) < 0)) {
                         quad(triangles, positions, inside,
                                 current[x + cubesX * y], current[x + cubesX * (y - 1)],
                                 previous[x + cubesX * (y - 1)], previous[x + cubesX * y]);
                     }
                     // Edge along y: offset in z then x.
-                    if (z > 0 && x > 0 && inside != (field[grid.index(x, y + 1, z)] < 0)) {
+                    if (z > 0 && x > 0 && inside != (signed.at(grid.index(x, y + 1, z)) < 0)) {
                         quad(triangles, positions, inside,
                                 current[x + cubesX * y], previous[x + cubesX * y],
                                 previous[x - 1 + cubesX * y], current[x - 1 + cubesX * y]);
                     }
                     // Edge along z: offset in x then y.
-                    if (x > 0 && y > 0 && inside != (field[grid.index(x, y, z + 1)] < 0)) {
+                    if (x > 0 && y > 0 && inside != (signed.at(grid.index(x, y, z + 1)) < 0)) {
                         quad(triangles, positions, inside,
                                 current[x + cubesX * y], current[x - 1 + cubesX * y],
                                 current[x - 1 + cubesX * (y - 1)], current[x + cubesX * (y - 1)]);
@@ -146,7 +162,7 @@ final class SurfaceNets {
      * Unit field gradient at local position {@code (u, v, w)} in cube {@code (x, y, z)}: central differences at the
      * cube's corners, blended trilinearly.
      */
-    private static void gradient(Grid grid, float[] field, int x, int y, int z, float u, float v, float w,
+    private static void gradient(Grid grid, Field field, int x, int y, int z, float u, float v, float w,
                                  float[] out) {
         float gx = 0, gy = 0, gz = 0;
         for (int c = 0; c < 8; c++) {
@@ -169,11 +185,19 @@ final class SurfaceNets {
         }
     }
 
-    private static float sample(Grid grid, float[] field, int x, int y, int z) {
+    private static float sample(Grid grid, Field field, int x, int y, int z) {
         x = Math.clamp(x, 0, grid.nx() - 1);
         y = Math.clamp(y, 0, grid.ny() - 1);
         z = Math.clamp(z, 0, grid.nz() - 1);
-        return field[grid.index(x, y, z)];
+        return field.at(grid.index(x, y, z));
+    }
+
+    /** Field values relative to the level, negated when the inside is above it. */
+    private record Field(float[] values, float level, float sign) {
+
+        float at(int index) {
+            return sign * (values[index] - level);
+        }
     }
 
     static final class FloatList {

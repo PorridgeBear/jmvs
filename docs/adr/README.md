@@ -23,6 +23,7 @@ Decisions for the modernised JMVS. The as-is records live in [`legacy/`](legacy/
 | [0017](0017-molecular-surfaces.md) | Molecular surfaces: grid distance fields, surface nets and a background overlay | Accepted | |
 | [0018](0018-computed-secondary-structure.md) | Computed secondary structure: a DSSP subset, applied when the file has none | Accepted | |
 | [0019](0019-cartoon-representation.md) | Cartoon representation: swept superellipse sections, indexed meshes | Accepted | |
+| [0020](0020-density-maps.md) | Density maps: MRC/CCP4 reader, surface-nets contours and zone colouring | Accepted | |
 
 Legacy ADRs 0003 (RasMol-derived chemistry) and 0005 (properties configuration) stay in force.
 

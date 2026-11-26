@@ -8,11 +8,11 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 /**
- * Native "open file" dialog via LWJGL's tinyfd binding.
+ * Native "open file" dialog via LWJGL's tinyfd binding, for structures and density maps.
  */
 final class FileOpener {
 
-    private static final String[] PATTERNS = {"*.cif", "*.mmcif", "*.bcif", "*.gz"};
+    private static final String[] PATTERNS = {"*.cif", "*.mmcif", "*.bcif", "*.map", "*.mrc", "*.ccp4", "*.gz"};
 
     private FileOpener() {
     }
@@ -28,8 +28,8 @@ final class FileOpener {
             }
             filters.flip();
             String start = startDirectory.toAbsolutePath() + startDirectory.getFileSystem().getSeparator();
-            String result = TinyFileDialogs.tinyfd_openFileDialog("Open structure", start, filters,
-                    "Structure files (*.cif, *.cif.gz, *.bcif)", false);
+            String result = TinyFileDialogs.tinyfd_openFileDialog("Open structure or map", start, filters,
+                    "Structures and density maps (*.cif, *.bcif, *.map, *.mrc, *.ccp4, *.gz)", false);
             return Optional.ofNullable(result).map(Path::of);
         }
     }

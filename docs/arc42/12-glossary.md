@@ -24,6 +24,9 @@ Terms from the [legacy glossary](legacy/12-glossary.md) still apply (mmCIF categ
 | Probe | Sphere standing in for a solvent molecule, 1.4 Å for water |
 | Distance transform | Distance from every grid point to the nearest point of a set, computed in linear time |
 | Surface nets | Meshing a level set with one vertex per crossed grid cube (a dual of marching cubes) |
+| Density map | Electron (cryo-EM) or electron-density (X-ray) values on a 3D grid; read from MRC/CCP4 files, as distributed by EMDB |
+| Contour level | Map value whose isosurface is drawn; given absolutely or in σ (standard deviations above the mean) |
+| Zone colouring | Colouring a map contour by the nearest model atom within a few Å |
 | Icosphere | Sphere mesh made by subdividing an icosahedron; the instanced atom template |
 | Strangler migration | Building the new system next to the old one and removing the old one at parity |
 | DSSP | Define Secondary Structure of Proteins (Kabsch & Sander, 1983): assigns helices, strands and turns from backbone hydrogen bonds; JMVS computes a subset of it ([ADR 0018](../adr/0018-computed-secondary-structure.md)) |

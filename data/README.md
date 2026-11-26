@@ -23,6 +23,8 @@ as chains (each has its own `label_asym_id`).
 | [1aon.cif.gz](https://www.rcsb.org/structure/1AON) | GroEL–GroES chaperonin with ADP | 58,870 / 35 | Stress test at ~59k atoms; kept compressed (1.4 MB). |
 | [1bna.cif](https://www.rcsb.org/structure/1BNA) | B-DNA dodecamer (Drew–Dickerson) | 566 / 4 | Nucleic acid: two 12-nucleotide strands plus waters, for the Cartoon mode's backbone tube and base blocks. No secondary-structure annotation, so *Auto* computes (all coil). |
 | [AF-P69905-F1-model_v6.cif](https://alphafold.ebi.ac.uk/entry/P69905) | AlphaFold DB prediction of human haemoglobin subunit alpha (UniProt P69905) | 1,077 / 1 | Predicted model: pLDDT in `B_iso_or_equiv` for the B-factor and Confidence schemes. Nearly all residues are very high confidence; Met 1 is low (65.38). Pairs with `4hhb`. From [AlphaFold DB](https://alphafold.ebi.ac.uk/), © DeepMind, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). |
+| [5me2.cif](https://www.rcsb.org/structure/5ME2) | Human haemoglobin by cryo-EM at 3.2 Å (Volta phase plate) | 4,468 / 8 | The model fitted into `emd_3488.map.gz`; pairs with the X-ray `4hhb`. 566 Cα atoms, 94% of them above the map's recommended contour (`SampleMapGoldenTest`). |
+| [emd_3488.map.gz](https://www.ebi.ac.uk/emdb/EMD-3488) | Cryo-EM density map of the same (EMDB EMD-3488) | 100³ map | Density maps: a real EMDB map (MRC2014, mode 2, little-endian, 1.05 Å voxels, origin 0) small enough to commit (1.3 MB gzipped). Recommended contour 0.09 (2.38σ); mean 0.00152, rms 0.03715. EMDB data is [CC0](https://www.ebi.ac.uk/emdb/about). |
 | AF-P69905-F1-model_v6-noss.cif | Same, without secondary-structure annotation | 1,077 / 1 | The `_struct_conf` and `_struct_conf_type` loops are deleted (lines 779–827 of the original), like a predicted model or file without annotation. Ribbons and Structure colouring must still show helices, computed from the backbone (Auto source, ADR 0018). |
 
 The RCSB files don't mark any turns (`TURN_*` in `_struct_conf`); the PDB no longer annotates them. The AlphaFold
@@ -30,6 +32,11 @@ file's annotation comes from DSSP 4 and includes turns, 3-10, pi and polyproline
 reference for computed secondary structure
 ([`ComputedSecondaryStructureGoldenTest`](../jmvs-core/src/test/java/com/adcworks/jmvs/core/chem/ComputedSecondaryStructureGoldenTest.java)).
 Turn handling in the reader is also tested with the synthetic file in `jmvs-core/src/test/resources`.
+
+Map counts are grid points, not atoms. Golden values for the map are in
+[`SampleMapGoldenTest`](../jmvs-core/src/test/java/com/adcworks/jmvs/core/io/SampleMapGoldenTest.java) and
+[`SampleMapContourTest`](../jmvs-scene/src/test/java/com/adcworks/jmvs/scene/density/SampleMapContourTest.java);
+EMDB maps are at `https://ftp.ebi.ac.uk/pub/databases/emdb/structures/EMD-<id>/map/emd_<id>.map.gz`.
 
 To add a file, download it from RCSB (`https://files.rcsb.org/download/<id>.cif` or
 `https://models.rcsb.org/<id>.bcif`), add a row here and golden values to `SampleFilesGoldenTest`. AlphaFold DB

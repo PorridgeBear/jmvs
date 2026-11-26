@@ -1,6 +1,7 @@
 package com.adcworks.jmvs.scene.surface;
 
 import com.adcworks.jmvs.scene.TriangleMesh;
+import com.adcworks.jmvs.scene.mesh.MeshChunks;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ import java.util.List;
  */
 public record Surface(SurfaceKind kind, List<TriangleMesh> meshes, double area) {
 
-    public static final int MAX_MESH_VERTICES = 65_535;
+    public static final int MAX_MESH_VERTICES = MeshChunks.MAX_VERTICES;
 
     public Surface {
         meshes = List.copyOf(meshes);

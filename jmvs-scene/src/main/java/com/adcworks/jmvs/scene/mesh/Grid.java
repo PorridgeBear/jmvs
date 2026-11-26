@@ -1,34 +1,39 @@
-package com.adcworks.jmvs.scene.surface;
+package com.adcworks.jmvs.scene.mesh;
 
 /**
  * A regular grid of {@code nx × ny × nz} points starting at an origin, {@code spacing} Å apart. Point
  * {@code (x, y, z)} has linear index {@code x + nx * (y + ny * z)}.
  */
-record Grid(float originX, float originY, float originZ, float spacing, int nx, int ny, int nz) {
+public record Grid(float originX, float originY, float originZ, float spacing, int nx, int ny, int nz) {
 
-    Grid {
+    public Grid {
         if (nx < 2 || ny < 2 || nz < 2) {
             throw new IllegalArgumentException("Grid needs at least 2 points per axis");
         }
     }
 
-    int size() {
+    /** A grid in index units: origin 0, spacing 1. */
+    public static Grid ofIndices(int nx, int ny, int nz) {
+        return new Grid(0, 0, 0, 1, nx, ny, nz);
+    }
+
+    public int size() {
         return nx * ny * nz;
     }
 
-    int index(int x, int y, int z) {
+    public int index(int x, int y, int z) {
         return x + nx * (y + ny * z);
     }
 
-    float x(int i) {
+    public float x(int i) {
         return originX + i * spacing;
     }
 
-    float y(int j) {
+    public float y(int j) {
         return originY + j * spacing;
     }
 
-    float z(int k) {
+    public float z(int k) {
         return originZ + k * spacing;
     }
 }

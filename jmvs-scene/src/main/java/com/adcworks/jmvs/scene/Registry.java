@@ -4,6 +4,7 @@ import com.adcworks.jmvs.core.config.ConfigurationException;
 import com.adcworks.jmvs.scene.colour.ColourScheme;
 import com.adcworks.jmvs.scene.colour.ColourSchemes;
 import com.adcworks.jmvs.scene.colour.ColourTables;
+import com.adcworks.jmvs.scene.config.DensitySettings;
 import com.adcworks.jmvs.scene.config.SurfaceSettings;
 import com.adcworks.jmvs.scene.config.ViewerConfig;
 import com.adcworks.jmvs.scene.mode.BallsAndSticksMode;
@@ -19,11 +20,12 @@ import java.util.Properties;
 import java.util.function.Function;
 
 /**
- * The display modes and colour schemes enabled by configuration, in menu order, and the surface settings. To add a
+ * The display modes and colour schemes enabled by configuration, in menu order, and the surface and density map
+ * settings. To add a
  * mode or scheme, implement the interface and register its id here.
  */
 public record Registry(List<DisplayMode> modes, DisplayMode defaultMode, List<ColourScheme> schemes,
-                       ColourScheme defaultScheme, SurfaceSettings surface) {
+                       ColourScheme defaultScheme, SurfaceSettings surface, DensitySettings density) {
 
     private static final Map<String, Function<ViewerConfig, DisplayMode>> MODES = Map.of(
             "balls", config -> new BallsMode(),
@@ -69,7 +71,8 @@ public record Registry(List<DisplayMode> modes, DisplayMode defaultMode, List<Co
             return factory.apply(tables);
         }).toList();
         return new Registry(modes, find(modes, config.defaultMode(), DisplayMode::id),
-                schemes, find(schemes, config.defaultScheme(), ColourScheme::id), config.surface());
+                schemes, find(schemes, config.defaultScheme(), ColourScheme::id), config.surface(),
+                config.density());
     }
 
     public DisplayMode mode(String id) {

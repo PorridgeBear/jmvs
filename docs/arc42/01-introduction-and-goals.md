@@ -16,6 +16,7 @@ JMVS is a single-user desktop viewer for 3D macromolecular structures in the spi
 | F8 | Pick an atom and show its details | Implemented ([ADR 0014](../adr/0014-camera-interaction-and-picking.md)) |
 | F9 | Show readable errors and keep running | New ([ADR 0011](../adr/0011-error-handling-and-logging.md)) |
 | F10 | Show a solvent-excluded or solvent-accessible surface over any display mode, coloured by the current scheme, opaque or transparent | New; computed in the background ([ADR 0017](../adr/0017-molecular-surfaces.md)) |
+| F11 | Show a cryo-EM density map (MRC/CCP4) with its fitted model, as a surface or mesh at an adjustable contour level, coloured by the nearby model | New; contoured in the background ([ADR 0020](../adr/0020-density-maps.md)) |
 
 ## 1.2 Quality goals
 

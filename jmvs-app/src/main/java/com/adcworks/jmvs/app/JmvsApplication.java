@@ -3,12 +3,15 @@ package com.adcworks.jmvs.app;
 import com.adcworks.jmvs.app.ui.ViewerUi;
 import com.adcworks.jmvs.core.chem.ElementTable;
 import com.adcworks.jmvs.core.io.StructureReaders;
+import com.adcworks.jmvs.core.map.DensityMap;
 import com.adcworks.jmvs.render.GlslCompatibility;
 import com.adcworks.jmvs.render.OrbitCameraController;
 import com.adcworks.jmvs.render.ScreenPicker;
 import com.adcworks.jmvs.render.StructureRenderer;
 import com.adcworks.jmvs.scene.Registry;
 import com.adcworks.jmvs.scene.Scene;
+import com.adcworks.jmvs.scene.density.DensityStyle;
+import com.adcworks.jmvs.scene.density.Isosurface;
 import com.adcworks.jmvs.scene.surface.Surface;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
@@ -48,6 +51,8 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
     private ViewerUi ui;
     private Path lastDirectory = Path.of("").toAbsolutePath();
     private int framesSinceShown = -1;
+    /** The map whose contour the camera was framed on, when shown without a structure. */
+    private DensityMap framedMap;
     private long benchmarkStart;
     private int benchmarkFrames;
 
@@ -75,20 +80,38 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
         options.secondaryStructure().ifPresent(controller::setSecondaryStructureSource);
         options.surface().ifPresent(kind -> controller.setSurface(Optional.of(kind)));
         options.surfaceOpacity().ifPresent(controller::setSurfaceOpacity);
+        options.mapStyle().ifPresent(controller::setDensityStyle);
+        options.mapOpacity().ifPresent(controller::setDensityOpacity);
+        renderer.setDensityColour(registry.density().colour());
+        renderer.setDensityStyle(controller.densityStyle());
+        renderer.setDensityOpacity(controller.densityOpacity());
         ui.refresh();
 
         Gdx.input.setInputProcessor(new InputMultiplexer(stage, shortcuts(), orbit));
         options.file().ifPresent(this::open);
+        options.map().ifPresent(path -> {
+            remember(path);
+            controller.openMap(path, options.contour());
+        });
     }
 
     /**
-     * Opens a file chosen outside the menu (command line, drag-and-drop). Call on the render thread.
+     * Opens a file chosen outside the menu (command line, drag-and-drop): a density map by its extension, otherwise
+     * a structure. Call on the render thread.
      */
     public void open(Path path) {
+        remember(path);
+        if (ViewerController.isMapFile(path.getFileName().toString())) {
+            controller.openMap(path);
+        } else {
+            controller.open(path);
+        }
+    }
+
+    private void remember(Path path) {
         if (path.getParent() != null) {
             lastDirectory = path.toAbsolutePath().getParent();
         }
-        controller.open(path);
     }
 
     @Override
@@ -108,9 +131,10 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
         options.benchmarkSeconds().ifPresent(this::benchmarkFrame);
     }
 
-    /** A structure is shown and its surface, if one is chosen, is computed. */
+    /** A structure or map is shown, nothing is loading, and its surface and map contour are computed. */
     private boolean ready() {
-        return framesSinceShown >= 0 && !controller.isSurfaceBuilding();
+        return framesSinceShown >= 0 && !controller.isLoading() && !controller.isMapLoading()
+                && !controller.isSurfaceBuilding() && !controller.isDensityBuilding();
     }
 
     private void benchmarkFrame(int seconds) {
@@ -129,7 +153,9 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
                     "Benchmark %s, %s/%s%s: %.1f fps average over %.1f s (%dx%d)",
                     controller.structure().map(s -> s.name() + " " + s.atoms().size() + " atoms").orElse("?"),
                     controller.mode().id(), controller.scheme().id(),
-                    controller.surfaceKind().map(k -> " + " + k.id() + " surface").orElse(""), fps, elapsed,
+                    controller.surfaceKind().map(k -> " + " + k.id() + " surface").orElse("")
+                            + controller.map().map(m -> " + map " + m.name() + " " + controller.densityStyle().id())
+                            .orElse(""), fps, elapsed,
                     Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight()));
             Gdx.app.exit();
         }
@@ -195,6 +221,43 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
     }
 
     @Override
+    public void mapShown(DensityMap map) {
+        if (renderer.scene() == null) {
+            orbit.frame(map.boundingSphere());
+        }
+        if (framesSinceShown < 0) {
+            framesSinceShown = 0;
+        }
+        ui.refresh();
+    }
+
+    @Override
+    public void densityChanged(Optional<Isosurface> isosurface) {
+        renderer.setDensity(isosurface);
+        // Without a structure, frame the first contour of each map: tighter than the map's box.
+        DensityMap map = controller.map().orElse(null);
+        if (renderer.scene() == null && map != null && map != framedMap) {
+            isosurface.flatMap(Isosurface::boundingSphere).ifPresent(sphere -> {
+                orbit.frame(sphere);
+                framedMap = map;
+            });
+        }
+        ui.refresh();
+    }
+
+    @Override
+    public void densityStyleChanged(DensityStyle style) {
+        renderer.setDensityStyle(style);
+        ui.refresh();
+    }
+
+    @Override
+    public void densityOpacityChanged(float opacity) {
+        renderer.setDensityOpacity(opacity);
+        ui.refresh();
+    }
+
+    @Override
     public void loadFailed(String message) {
         ui.error(message);
         if (options.screenshot().isPresent() || options.benchmarkSeconds().isPresent()) {
@@ -213,6 +276,8 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
     public void resetView() {
         if (renderer.scene() != null) {
             orbit.frame(renderer.scene().bounds());
+        } else {
+            controller.map().ifPresent(map -> orbit.frame(map.boundingSphere()));
         }
     }
 
@@ -242,6 +307,14 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
                 }
                 if (keycode == Input.Keys.ESCAPE) {
                     controller.select(OptionalInt.empty());
+                    return true;
+                }
+                if ((keycode == Input.Keys.LEFT_BRACKET || keycode == Input.Keys.RIGHT_BRACKET)
+                        && controller.map().isPresent()) {
+                    int steps = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)
+                            || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT) ? 5 : 1;
+                    controller.stepContourLevel(keycode == Input.Keys.LEFT_BRACKET ? -steps : steps);
+                    ui.refresh();
                     return true;
                 }
                 return false;
