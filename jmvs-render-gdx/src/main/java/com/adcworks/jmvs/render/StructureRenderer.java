@@ -31,6 +31,8 @@ public final class StructureRenderer implements Disposable {
     private static final int SPHERE_FLOATS = 8;
     private static final int CYLINDER_FLOATS = 11;
     private static final int MESH_FLOATS = 10;
+    /** Most vertices a mesh can have with libGDX's 16-bit index buffers. */
+    private static final int MAX_INDEXED_VERTICES = 65_535;
     private static final int LARGE_SPHERE_COUNT = 60_000;
 
     private final ShaderProgram sphereShader;
@@ -102,6 +104,10 @@ public final class StructureRenderer implements Disposable {
         }
 
         for (TriangleMesh source : scene.meshes()) {
+            if (source.vertexCount() <= MAX_INDEXED_VERTICES) {
+                addIndexedMesh(source, meshData, meshAtoms, meshes);
+                continue;
+            }
             // Expanded to non-indexed triangles: libGDX index buffers are 16-bit.
             int[] indices = source.indices();
             float[] data = new float[indices.length * MESH_FLOATS];
@@ -125,29 +131,35 @@ public final class StructureRenderer implements Disposable {
      */
     public void setSurface(Optional<Surface> surface) {
         disposeSurface();
-        surface.ifPresent(s -> {
-            for (TriangleMesh source : s.meshes()) {
-                // Indexed: Surface guarantees at most 65,535 vertices per mesh, within libGDX's 16-bit indices.
-                int count = source.vertexCount();
-                float[] data = new float[count * MESH_FLOATS];
-                for (int v = 0; v < count; v++) {
-                    System.arraycopy(source.positions(), v * 3, data, v * MESH_FLOATS, 3);
-                    System.arraycopy(source.normals(), v * 3, data, v * MESH_FLOATS + 3, 3);
-                }
-                int[] indices = source.indices();
-                short[] shortIndices = new short[indices.length];
-                for (int i = 0; i < indices.length; i++) {
-                    shortIndices[i] = (short) indices[i];
-                }
-                Mesh mesh = new Mesh(true, count, indices.length, new VertexAttributes(VertexAttribute.Position(),
-                        VertexAttribute.Normal(), new VertexAttribute(VertexAttributes.Usage.Generic, 4, "a_color")));
-                mesh.setIndices(shortIndices);
-                surfaceData.add(data);
-                surfaceAtoms.add(source.atoms());
-                surfaceMeshes.add(mesh);
-            }
-        });
+        // Surface guarantees at most 65,535 vertices per mesh, within libGDX's 16-bit indices.
+        surface.ifPresent(s -> s.meshes().forEach(source ->
+                addIndexedMesh(source, surfaceData, surfaceAtoms, surfaceMeshes)));
         uploadSurfaceColours();
+    }
+
+    /**
+     * Uploads a mesh of at most {@link #MAX_INDEXED_VERTICES} vertices with 16-bit indices; colours are filled in
+     * later from {@code atoms}.
+     */
+    private static void addIndexedMesh(TriangleMesh source, List<float[]> dataOut, List<int[]> atomsOut,
+                                       List<Mesh> meshesOut) {
+        int count = source.vertexCount();
+        float[] data = new float[count * MESH_FLOATS];
+        for (int v = 0; v < count; v++) {
+            System.arraycopy(source.positions(), v * 3, data, v * MESH_FLOATS, 3);
+            System.arraycopy(source.normals(), v * 3, data, v * MESH_FLOATS + 3, 3);
+        }
+        int[] indices = source.indices();
+        short[] shortIndices = new short[indices.length];
+        for (int i = 0; i < indices.length; i++) {
+            shortIndices[i] = (short) indices[i];
+        }
+        Mesh mesh = new Mesh(true, count, indices.length, new VertexAttributes(VertexAttribute.Position(),
+                VertexAttribute.Normal(), new VertexAttribute(VertexAttributes.Usage.Generic, 4, "a_color")));
+        mesh.setIndices(shortIndices);
+        dataOut.add(data);
+        atomsOut.add(source.atoms());
+        meshesOut.add(mesh);
     }
 
     /**

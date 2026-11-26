@@ -18,8 +18,8 @@ flowchart TB
 | Module | Responsibility | Key packages |
 |---|---|---|
 | `jmvs-core` | Immutable structure model; element table; covalent bonding; computed secondary structure; readers for mmCIF/BinaryCIF (plain or gzip); resource loading and configuration errors | `core.model`, `core.chem`, `core.io`, `core.config` |
-| `jmvs-scene` | Scene data types; display modes (Balls, Sticks, Balls-and-sticks, Ribbons); molecular surfaces; colour schemes (CPK, Chain, Group, Structure, B-factor, Confidence) and legends; registry; viewer and surface config; ray picking | `scene`, `scene.mode`, `scene.surface`, `scene.colour`, `scene.config` |
-| `jmvs-render-gdx` | Upload scene data to GPU, instanced drawing, ribbon and surface meshes, surface transparency, lighting, GLSL setup, orbit camera, screen-to-ray picking | `render` |
+| `jmvs-scene` | Scene data types; display modes (Balls, Sticks, Balls-and-sticks, Ribbons, Cartoon); molecular surfaces; colour schemes (CPK, Chain, Group, Structure, B-factor, Confidence) and legends; registry; viewer and surface config; ray picking | `scene`, `scene.mode`, `scene.surface`, `scene.colour`, `scene.config` |
+| `jmvs-render-gdx` | Upload scene data to GPU, instanced drawing, indexed ribbon, cartoon and surface meshes, surface transparency, lighting, GLSL setup, orbit camera, screen-to-ray picking | `render` |
 | `jmvs-app` | Launcher and options; `ViewerController` state; Scene2D menus, status bar, dialogs; async loading; file dialog; drag-and-drop; packaging | `app`, `app.ui` |
 | `legacy-app` | Legacy Java3D app, archived as a standalone build (not in the root build) | `com.adcworks.jmvs` (legacy) |
 
@@ -54,12 +54,13 @@ classDiagram
 | Type | Responsibility |
 |---|---|
 | `Scene` | `SphereInstances`, `CylinderInstances`, `TriangleMesh` list, pick targets, bounding sphere; each element refers back to an atom index |
-| `DisplayMode` | `Scene build(Structure)`; `supports(ColourScheme)`. Implementations: `BallsMode`, `SticksMode`, `BallsAndSticksMode`, `RibbonsMode` |
+| `DisplayMode` | `Scene build(Structure)`; `supports(ColourScheme)`. Implementations: `BallsMode`, `SticksMode`, `BallsAndSticksMode`, `RibbonsMode`, `CartoonMode` |
 | `RibbonsMode`, `BSpline` | Carson–Bugg ribbons from Cα/O guide points with the legacy widths and helix offset; B-spline sampling |
+| `CartoonMode`, `BackboneGuides`, `Vectors` | Cartoon: superellipse cross-sections swept along a B-spline through Cα (helix ribbons, strand slabs with arrowheads, coil tubes) and through P for nucleic acids, with base sticks and blocks; meshes split to ≤ 65,535 vertices; sizes from `CartoonSettings` (`cartoon.*`) ([ADR 0019](../adr/0019-cartoon-representation.md)). `BackboneGuides` and `Vectors` are shared with Ribbons |
 | `ColourScheme` | `int colourOf(Structure, Atom)` (packed RGB); optional `Legend` (bands or gradient) for the UI. `ColourSchemes` builds CPK, Chain, Group, Structure, B-factor and Confidence (pLDDT) from `ColourTables` ([ADR 0016](../adr/0016-bfactor-confidence-colouring-and-legends.md)) |
 | `SurfaceBuilder`, `Surface`, `SurfaceKind` | SES/SAS from grid distance fields (`DistanceTransform`) meshed by `SurfaceNets`; split into ≤ 65,535-vertex `TriangleMesh`es whose vertices refer to atoms; cancellable ([ADR 0017](../adr/0017-molecular-surfaces.md)) |
 | `AtomRadii` | Van der Waals and united-atom radii shared by modes and surfaces |
-| `Registry` | Ordered built-in modes and schemes by id; defaults from `ViewerConfig`; scheme fallback per mode; `SurfaceSettings` (probe, spacing, voxel cap) |
+| `Registry` | Ordered built-in modes and schemes by id; defaults from `ViewerConfig`; scheme fallback per mode; `SurfaceSettings` (probe, spacing, voxel cap); `CartoonSettings` passed to `CartoonMode` |
 | `Picking` | Nearest sphere hit by a ray |
 
 ## Level 2 — `jmvs-render-gdx`

@@ -22,5 +22,6 @@ Full records live in [`../adr/`](../adr/README.md). Legacy records are in [`../a
 | [0016](../adr/0016-bfactor-confidence-colouring-and-legends.md) | B-factor in the model; B-factor and confidence schemes; scheme legends | Accepted |
 | [0017](../adr/0017-molecular-surfaces.md) | Molecular surfaces as a background-built overlay; distance fields and surface nets | Accepted |
 | [0018](../adr/0018-computed-secondary-structure.md) | Computed secondary structure: DSSP subset, file annotation by default | Accepted |
+| [0019](../adr/0019-cartoon-representation.md) | Cartoon representation: swept superellipse sections, indexed meshes | Accepted |
 | legacy [0003](../adr/legacy/0003-rasmol-derived-chemistry.md) | RasMol-derived chemistry and colours | Accepted (still in force) |
 | legacy [0005](../adr/legacy/0005-properties-based-configuration.md) | Properties-based configuration | Accepted (still in force) |

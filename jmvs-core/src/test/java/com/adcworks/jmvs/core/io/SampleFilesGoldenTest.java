@@ -34,6 +34,7 @@ class SampleFilesGoldenTest {
             "1d3z.cif,     10,     10,     760,      12310, 12370, 220,   230,   0,         35.630,  17.911",
             "1aon.cif.gz,  1,      35,     8029,     58870, 59279, 3835,  1153,  196,       7.075,   77.793",
             "AF-P69905-F1-model_v6.cif, 1, 1, 142, 1077, 1105, 111, 0, 0, -19.915, 20.000",
+            "1bna.cif,     1,      4,      104,      566,   546,   0,     0,     80,        2.622,   31.084",
             "AF-P69905-F1-model_v6-noss.cif, 1, 1, 142, 1077, 1105, 0, 0, 0, -19.915, 20.000",
     })
     void sampleMatchesGoldenValues(String file, int models, int chains, int residues, int atoms, int bonds,
@@ -51,7 +52,7 @@ class SampleFilesGoldenTest {
         assertThat(s.bounds().minX()).isCloseTo(minX, within(0.001f));
         assertThat(s.bounds().maxZ()).isCloseTo(maxZ, within(0.001f));
         assertThat(s.name()).isEqualTo(file.replace(".gz", ""));
-        assertThat(s.secondaryStructureAnnotated()).isEqualTo(!file.contains("noss"));
+        assertThat(s.secondaryStructureAnnotated()).isEqualTo(!file.contains("noss") && !file.startsWith("1bna"));
         assertThat(s.models().stream().mapToInt(m -> m.number()).toArray())
                 .isEqualTo(java.util.stream.IntStream.rangeClosed(1, models).toArray());
     }

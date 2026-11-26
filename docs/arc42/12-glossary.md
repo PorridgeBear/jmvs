@@ -13,7 +13,9 @@ Terms from the [legacy glossary](legacy/12-glossary.md) still apply (mmCIF categ
 | Toolchain | JDK selected by Gradle for compiling/running, independent of the JDK running Gradle |
 | Instanced rendering | Drawing many copies of one mesh in one draw call with per-instance data |
 | Scene (JMVS) | Renderer-neutral data produced by a display mode: sphere/cylinder instances and meshes |
-| Display mode | How atoms are drawn (Balls, Sticks, Balls-and-sticks, Ribbons); replaces legacy "plugin" |
+| Display mode | How atoms are drawn (Balls, Sticks, Balls-and-sticks, Ribbons, Cartoon); replaces legacy "plugin" |
+| Cartoon | Backbone drawn as helix ribbons, arrowed strands and coil tubes, with nucleic-acid backbones and base blocks |
+| Superellipse | Curve `\|x/w\|^e + \|y/h\|^e = 1`: an ellipse for e = 2, nearer a rectangle as e grows; the cartoon cross-section |
 | Colour scheme | How atoms are coloured (CPK, Chain, Group, Structure, B-factor, Confidence); replaces legacy "paint mode" |
 | pLDDT | Predicted local distance difference test: AlphaFold's per-residue confidence (0–100), stored in the B-factor column |
 | Bounding sphere | Smallest enclosing sphere (approximate) used to frame the camera |

@@ -41,7 +41,7 @@ jmvs-app/build/install/jmvs/bin/jmvs data/1zpd.cif --mode balls --benchmark 5
 jmvs-app/build/install/jmvs/bin/jmvs data/4hhb.cif --mode ribbons --scheme chain --surface ses --surface-opacity 0.5 --screenshot /tmp/4hhb.png
 ```
 
-Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`. Scheme ids: `cpk`, `chain`, `group`, `structure`, `bfactor`, `confidence`. Surface ids: `ses`, `sas`. Secondary structure sources (`--ss`): `auto`, `file`, `computed`.
+Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`, `cartoon`. Scheme ids: `cpk`, `chain`, `group`, `structure`, `bfactor`, `confidence`. Surface ids: `ses`, `sas`. Secondary structure sources (`--ss`): `auto`, `file`, `computed`.
 
 ## Architecture rules
 

@@ -9,7 +9,7 @@ JMVS is a single-user desktop viewer for 3D macromolecular structures in the spi
 | F1 | Open a PDBx/mmCIF file via a native dialog or drag-and-drop | `.cif.gz` and BinaryCIF also accepted; loading does not block the UI |
 | F2 | Read atoms, helices, sheets and turns | Turns added; robust parsing ([ADR 0008](../adr/0008-mmcif-via-ciftools-java.md)) |
 | F3 | Infer covalent bonds with RasMol's rules | Same rules, spatial-grid search ([ADR 0009](../adr/0009-spatial-grid-covalent-bonding.md)) |
-| F4 | Display as Balls, Sticks, Balls-and-sticks, Ribbons | Balls-and-sticks enabled |
+| F4 | Display as Balls, Sticks, Balls-and-sticks, Ribbons, Cartoon | Balls-and-sticks enabled |
 | F5 | Colour by CPK, Chain, Group, Structure, B-factor, Confidence (pLDDT) | Any scheme with any supported mode; stable chain colours; turns coloured; pLDDT in the AlphaFold DB bands, with a legend |
 | F6 | Rotate, zoom, pan, reset view | Pan and reset added |
 | F7 | Switch mode/colour at runtime; status bar | Recolouring without rebuilding geometry |

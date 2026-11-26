@@ -23,7 +23,7 @@ the *Status* line at the end of its section in the same pull request as the work
 | 3 | Models and image export | Everyday use | Medium | S | 0 | ⏳ Planned |
 | 4 | Legacy PDB files | Getting data | Medium | S | 0 | ⏳ Planned |
 | 5 | Computed secondary structure | Predicted models | High | M | — | ✅ Done |
-| 6 | Cartoon representation | Visualisation | High | M | 5 | ⏳ Planned |
+| 6 | Cartoon representation | Visualisation | High | M | 5 | ✅ Done |
 | 7 | Measurements and labels | Analysis | High | M | — | ⏳ Planned |
 | 8 | Biological assemblies | Biological context | High | M | — | ⏳ Planned |
 | 9 | Selections and mixed representations | Analysis | High | L | 7 | ⏳ Planned |
@@ -51,7 +51,7 @@ flowchart LR
 
     classDef done fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20
     classDef inProgress fill:#fff3c4,stroke:#f9a825,color:#5d4000
-    class S0,S1,S5,S11 done
+    class S0,S1,S5,S6,S11 done
 ```
 
 ## Slices
@@ -148,7 +148,8 @@ The representation most users expect, built on the existing ribbon code.
 
 **Done when** `4hhb`, `1usc` and a DNA structure render as cartoons with arrows and tubes.
 
-**Status: planned.**
+**Status: done.** `CartoonMode` ([ADR 0019](adr/0019-cartoon-representation.md)); `data/1bna.cif` added as the DNA
+sample. Helices are wide ribbons (cylinders not yet offered).
 
 ### 7. Measurements and labels
 
