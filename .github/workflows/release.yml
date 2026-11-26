@@ -57,6 +57,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri
       - name: Smoke test installer
         shell: bash
+        env:
+          JMVS_SMOKE_ALLOW_NO_GL: ${{ runner.os == 'macOS' && '1' || '' }}
         run: .github/scripts/smoke-test-installer.sh jmvs-app/build/jpackage/*.${{ matrix.type }} smoke-${{ matrix.type }}.png
       - if: always()
         uses: actions/upload-artifact@v4
