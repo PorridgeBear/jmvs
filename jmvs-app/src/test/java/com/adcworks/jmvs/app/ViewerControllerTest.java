@@ -142,6 +142,20 @@ class ViewerControllerTest {
         controller.select(OptionalInt.of(1));
 
         assertThat(controller.selection()).hasValue(1);
-        assertThat(controller.describe(1)).startsWith("CA (Carbon)  THR 1  chain A  (");
+        assertThat(controller.describe(1)).startsWith("CA (Carbon)  THR 1  chain A  (").endsWith("  B-factor 10.80");
+
+        controller.setScheme("confidence");
+        assertThat(controller.describe(1)).endsWith("  pLDDT 10.8");
+    }
+
+    @Test
+    void legendFollowsTheSchemeAndStructure() {
+        assertThat(controller.legend()).isEmpty();
+        controller.open(DATA.resolve("AF-P69905-F1-model_v6.cif"));
+        assertThat(controller.legend()).isEmpty();
+
+        controller.setScheme("confidence");
+
+        assertThat(controller.legend()).hasValueSatisfying(l -> assertThat(l.title()).contains("pLDDT"));
     }
 }

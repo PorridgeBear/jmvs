@@ -2,11 +2,13 @@
 
 <table>
   <tr>
-    <td align="center" width="20%"><a href="docs/images/1aon-balls-chain.png"><img src="docs/images/1aon-balls-chain.png" width="180" alt="1aon · 58,870 atoms"></a></td>
-    <td align="center" width="20%"><a href="docs/images/4hhb-ribbons-structure.png"><img src="docs/images/4hhb-ribbons-structure.png" width="180" alt="4hhb · ribbons"></a></td>
-    <td align="center" width="20%"><a href="docs/images/4hhb-bcif-balls-chain.png"><img src="docs/images/4hhb-bcif-balls-chain.png" width="180" alt="4hhb · BinaryCIF"></a></td>
-    <td align="center" width="20%"><a href="docs/images/3nir-sticks-cpk.png"><img src="docs/images/3nir-sticks-cpk.png" width="180" alt="3nir · hydrogens"></a></td>
-    <td align="center" width="20%"><a href="docs/images/1d3z-ribbons-structure.png"><img src="docs/images/1d3z-ribbons-structure.png" width="180" alt="1d3z · NMR models"></a></td>
+    <td align="center" width="14%"><a href="docs/images/1aon-balls-chain.png"><img src="docs/images/1aon-balls-chain.png" width="130" alt="1aon · 58,870 atoms"></a></td>
+    <td align="center" width="14%"><a href="docs/images/4hhb-ribbons-structure.png"><img src="docs/images/4hhb-ribbons-structure.png" width="130" alt="4hhb · ribbons"></a></td>
+    <td align="center" width="14%"><a href="docs/images/4hhb-bcif-balls-chain.png"><img src="docs/images/4hhb-bcif-balls-chain.png" width="130" alt="4hhb · BinaryCIF"></a></td>
+    <td align="center" width="14%"><a href="docs/images/3nir-sticks-cpk.png"><img src="docs/images/3nir-sticks-cpk.png" width="130" alt="3nir · hydrogens"></a></td>
+    <td align="center" width="14%"><a href="docs/images/1d3z-ribbons-structure.png"><img src="docs/images/1d3z-ribbons-structure.png" width="130" alt="1d3z · NMR models"></a></td>
+    <td align="center" width="14%"><a href="docs/images/af-p69905-ribbons-confidence.png"><img src="docs/images/af-p69905-ribbons-confidence.png" width="130" alt="AlphaFold model · pLDDT confidence"></a></td>
+    <td align="center" width="14%"><a href="docs/images/1crn-balls-bfactor.png"><img src="docs/images/1crn-balls-bfactor.png" width="130" alt="1crn · B-factor"></a></td>
   </tr>
 </table>
 
@@ -40,6 +42,8 @@ atoms are drawn with GPU instancing.
 
 **Features**
 * Balls and sticks mode is back, and every colour scheme works in every mode (except CPK for ribbons).
+* Colour by B-factor or by AlphaFold model confidence (pLDDT, in the AlphaFold DB bands), with a colour legend; the
+  picked atom's B-factor or pLDDT is shown in the status bar.
 * Turns are read and coloured in structure mode when a file marks them (few modern PDB files do).
 * Click an atom to highlight it and see its element, residue, chain and coordinates.
 * Pan and reset the view, open files with the native dialog or by dropping them on the window, and read `.cif.gz`

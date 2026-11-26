@@ -9,6 +9,7 @@ import com.adcworks.jmvs.core.model.Structure;
 import com.adcworks.jmvs.scene.Registry;
 import com.adcworks.jmvs.scene.Scene;
 import com.adcworks.jmvs.scene.colour.ColourScheme;
+import com.adcworks.jmvs.scene.colour.Legend;
 import com.adcworks.jmvs.scene.mode.DisplayMode;
 
 import java.nio.file.Path;
@@ -157,15 +158,29 @@ public final class ViewerController {
     }
 
     /**
-     * Human-readable description of an atom, e.g. {@code "CA (Carbon)  ALA 12  chain A  (1.20, 3.40, -5.60)"}.
+     * Human-readable description of an atom, e.g. {@code "CA (Carbon)  ALA 12  chain A  (1.20, 3.40, -5.60)"},
+     * followed by its B-factor, shown as pLDDT while colouring by confidence.
      */
     public String describe(int atomIndex) {
         Atom atom = structure.atoms().get(atomIndex);
         Residue residue = structure.residueOf(atom);
         Chain chain = structure.chainOf(residue);
-        return String.format(Locale.ROOT, "%s (%s)  %s %d%s  chain %s  (%.2f, %.2f, %.2f)", atom.name(),
+        String text = String.format(Locale.ROOT, "%s (%s)  %s %d%s  chain %s  (%.2f, %.2f, %.2f)", atom.name(),
                 atom.element().name(), residue.name(), residue.seqId(), residue.insertionCode(), chain.authId(),
                 atom.x(), atom.y(), atom.z());
+        if (!atom.hasBFactor()) {
+            return text;
+        }
+        return scheme().id().equals("confidence")
+                ? text + String.format(Locale.ROOT, "  pLDDT %.1f", atom.bFactor())
+                : text + String.format(Locale.ROOT, "  B-factor %.2f", atom.bFactor());
+    }
+
+    /**
+     * Key to the current colours, if the scheme has one and a structure is shown.
+     */
+    public Optional<Legend> legend() {
+        return structure().flatMap(scheme()::legend);
     }
 
     private Scene scene() {

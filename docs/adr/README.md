@@ -19,6 +19,7 @@ Decisions for the modernised JMVS. The as-is records live in [`legacy/`](legacy/
 | [0013](0013-ci-and-native-packaging.md) | CI with GitHub Actions and native packaging with jpackage | Accepted | |
 | [0014](0014-camera-interaction-and-picking.md) | Camera interaction and CPU ray picking | Accepted | |
 | [0015](0015-typed-properties-configuration.md) | Typed configuration from classpath properties | Accepted | Refines legacy 0005 |
+| [0016](0016-bfactor-confidence-colouring-and-legends.md) | B-factor in the model, confidence colouring and colour-scheme legends | Accepted | |
 
 Legacy ADRs 0003 (RasMol-derived chemistry) and 0005 (properties configuration) stay in force.
 

@@ -21,9 +21,13 @@ as chains (each has its own `label_asym_id`).
 | [3nir.cif](https://www.rcsb.org/structure/3NIR) | Crambin at 0.48 Å resolution | 784 / 6 | Same protein as 1crn at very high resolution, with hydrogens and many alternate locations (534 alternate-location rows). Tests that alternates aren't duplicated, and covers hydrogens under the radius-based bonding rule. |
 | [1d3z.cif](https://www.rcsb.org/structure/1D3Z) | Ubiquitin, NMR | 12,310 / 10 models | Multiple models (10 NMR conformers, all drawn overlaid), numbered from 1. Hydrogen-rich and over 1,000 atoms, so it covers RasMol's 1.2 Å hydrogen limit in the distance-based rule. |
 | [1aon.cif.gz](https://www.rcsb.org/structure/1AON) | GroEL–GroES chaperonin with ADP | 58,870 / 35 | Stress test at ~59k atoms; kept compressed (1.4 MB). |
+| [AF-P69905-F1-model_v6.cif](https://alphafold.ebi.ac.uk/entry/P69905) | AlphaFold DB prediction of human haemoglobin subunit alpha (UniProt P69905) | 1,077 / 1 | Predicted model: pLDDT in `B_iso_or_equiv` for the B-factor and Confidence schemes. Nearly all residues are very high confidence; Met 1 is low (65.38). Pairs with `4hhb`. From [AlphaFold DB](https://alphafold.ebi.ac.uk/), © DeepMind, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). |
 
 None of these files mark any turns (`TURN_*` in `_struct_conf`); the PDB no longer annotates them. Turn handling is
 tested with the synthetic file in `jmvs-core/src/test/resources`.
 
 To add a file, download it from RCSB (`https://files.rcsb.org/download/<id>.cif` or
-`https://models.rcsb.org/<id>.bcif`), add a row here and golden values to `SampleFilesGoldenTest`.
+`https://models.rcsb.org/<id>.bcif`), add a row here and golden values to `SampleFilesGoldenTest`. AlphaFold DB
+models are at `https://alphafold.ebi.ac.uk/files/AF-<uniprot>-F1-model_v<n>.cif` (the latest version is in
+`https://alphafold.ebi.ac.uk/api/prediction/<uniprot>`); the file server returns 403 to clients without a
+browser-like `User-Agent`, e.g. `curl -A "Mozilla/5.0"`.

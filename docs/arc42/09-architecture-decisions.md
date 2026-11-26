@@ -19,5 +19,6 @@ Full records live in [`../adr/`](../adr/README.md). Legacy records are in [`../a
 | [0013](../adr/0013-ci-and-native-packaging.md) | GitHub Actions CI; jpackage installers | Accepted |
 | [0014](../adr/0014-camera-interaction-and-picking.md) | Orbit camera; CPU ray picking | Accepted |
 | [0015](../adr/0015-typed-properties-configuration.md) | Typed configuration from properties | Accepted; refines legacy 0005 |
+| [0016](../adr/0016-bfactor-confidence-colouring-and-legends.md) | B-factor in the model; B-factor and confidence schemes; scheme legends | Accepted |
 | legacy [0003](../adr/legacy/0003-rasmol-derived-chemistry.md) | RasMol-derived chemistry and colours | Accepted (still in force) |
 | legacy [0005](../adr/legacy/0005-properties-based-configuration.md) | Properties-based configuration | Accepted (still in force) |

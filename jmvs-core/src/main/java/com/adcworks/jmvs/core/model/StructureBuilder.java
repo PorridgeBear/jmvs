@@ -14,7 +14,7 @@ import java.util.Map;
 public final class StructureBuilder {
 
     private record PendingAtom(int serial, String name, Element element, float x, float y, float z,
-                               boolean heterogen) {
+                               boolean heterogen, float bFactor) {
     }
 
     private static final class PendingResidue {
@@ -63,18 +63,19 @@ public final class StructureBuilder {
      *
      * @param labelSeqId {@code label_seq_id}, or {@code null} for non-polymer residues
      * @param authSeqId  {@code auth_seq_id}, used to separate non-polymer residues
+     * @param bFactor    {@code B_iso_or_equiv}, or {@link Float#NaN} if absent
      */
     public StructureBuilder addAtom(int modelNumber, String chainId, String authChainId, Integer labelSeqId,
                                     int authSeqId, String insertionCode, String residueName, int serial,
                                     String atomName, Element element, float x, float y, float z,
-                                    boolean heterogen) {
+                                    boolean heterogen, float bFactor) {
         boolean polymer = labelSeqId != null;
         int seqId = polymer ? labelSeqId : authSeqId;
         String key = (polymer ? "L" : "A") + seqId + insertionCode + ":" + residueName;
         models.computeIfAbsent(modelNumber, n -> new LinkedHashMap<>())
                 .computeIfAbsent(chainId, id -> new PendingChain(authChainId))
                 .residues.computeIfAbsent(key, k -> new PendingResidue(residueName, seqId, insertionCode, polymer))
-                .atoms.add(new PendingAtom(serial, atomName, element, x, y, z, heterogen));
+                .atoms.add(new PendingAtom(serial, atomName, element, x, y, z, heterogen, bFactor));
         return this;
     }
 
@@ -107,7 +108,7 @@ public final class StructureBuilder {
                     int firstAtom = atoms.size();
                     for (PendingAtom a : r.atoms) {
                         atoms.add(new Atom(atoms.size(), a.serial, a.name, a.element, a.x, a.y, a.z, a.heterogen,
-                                residueIndex));
+                                residueIndex, a.bFactor));
                     }
                     residues.add(new Residue(residueIndex, chainIndex, r.name, r.seqId, r.insertionCode, r.polymer,
                             secondaryStructureOf(chainId, r), firstAtom, r.atoms.size()));

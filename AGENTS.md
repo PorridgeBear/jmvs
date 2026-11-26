@@ -39,7 +39,7 @@ jmvs-app/build/install/jmvs/bin/jmvs data/1usc.cif --mode ribbons --scheme struc
 jmvs-app/build/install/jmvs/bin/jmvs data/1zpd.cif --mode balls --benchmark 5
 ```
 
-Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`. Scheme ids: `cpk`, `chain`, `group`, `structure`.
+Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`. Scheme ids: `cpk`, `chain`, `group`, `structure`, `bfactor`, `confidence`.
 
 ## Architecture rules
 
@@ -74,3 +74,5 @@ Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`. Scheme ids: `cpk`, `ch
 - Legacy docs are a record of the as-is system: do not edit them, except to add a *Superseded by* line to a legacy ADR.
 - Record new or changed decisions as a new ADR in `docs/adr/` (next free number) and add it to `docs/adr/README.md`; supersede rather than rewrite accepted ADRs.
 - Keep `docs/arc42/` and the status table in `docs/modernisation.md` in sync with the code.
+- When adding a user-visible display mode, colour scheme or other visual feature, add an example to the image table at the top of the root `README.md`: render it with `--screenshot` into `docs/images/<sample>-<mode>-<scheme>.png` (scaled to 1664 px wide), and keep the table on one row by narrowing the cells if needed.
+- Keep [`docs/roadmap.md`](docs/roadmap.md) current: when a slice starts or finishes, update its *Status* in the overview table, the Mermaid diagram class and the *Status* line of its section in the same pull request.

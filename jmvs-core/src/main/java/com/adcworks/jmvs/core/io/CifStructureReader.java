@@ -88,10 +88,11 @@ public final class CifStructureReader implements StructureReader {
             }
 
             String authChainId = present(site.getAuthAsymId(), i) ? site.getAuthAsymId().get(i) : chainId;
+            float bFactor = present(site.getBIsoOrEquiv(), i) ? (float) site.getBIsoOrEquiv().get(i) : Float.NaN;
             builder.addAtom(model, chainId, authChainId, labelSeqId, authSeqId, insertionCode, residueName,
                     site.getId().get(i), atomName, elements.bySymbol(site.getTypeSymbol().get(i)),
                     (float) site.getCartnX().get(i), (float) site.getCartnY().get(i),
-                    (float) site.getCartnZ().get(i), "HETATM".equals(site.getGroupPDB().get(i)));
+                    (float) site.getCartnZ().get(i), "HETATM".equals(site.getGroupPDB().get(i)), bFactor);
         }
     }
 
