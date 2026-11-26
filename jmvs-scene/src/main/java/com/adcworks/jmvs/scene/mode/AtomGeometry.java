@@ -3,11 +3,11 @@ package com.adcworks.jmvs.scene.mode;
 import com.adcworks.jmvs.core.model.Atom;
 import com.adcworks.jmvs.core.model.Bond;
 import com.adcworks.jmvs.core.model.Structure;
+import com.adcworks.jmvs.scene.AtomRadii;
 import com.adcworks.jmvs.scene.CylinderInstances;
 import com.adcworks.jmvs.scene.SphereInstances;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.ToDoubleFunction;
 
 /**
@@ -15,22 +15,11 @@ import java.util.function.ToDoubleFunction;
  */
 final class AtomGeometry {
 
-    /**
-     * RasMol "united atom" radii, used for C, N, O and S when the structure has no hydrogens.
-     */
-    static final Map<String, Float> UNITED_RADII = Map.of("C", 1.872f, "N", 1.507f, "O", 1.400f, "S", 1.848f);
-
     private AtomGeometry() {
     }
 
     static float vanDerWaalsRadius(Structure structure, Atom atom) {
-        if (!structure.hasHydrogens()) {
-            Float united = UNITED_RADII.get(atom.element().symbol());
-            if (united != null) {
-                return united;
-            }
-        }
-        return atom.element().vanDerWaalsRadius();
+        return AtomRadii.vanDerWaals(structure, atom);
     }
 
     static SphereInstances spheres(Structure structure, ToDoubleFunction<Atom> radius) {

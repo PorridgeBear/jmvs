@@ -24,3 +24,4 @@ Reference machine: Apple M1-class Mac, integrated GPU, 2560×1504 back buffer (R
 | Q8 | Add a new display mode | One class + one registry entry; no changes to renderer or UI | Partial | Met: `DisplayMode` + `Registry`; menus are built from the registry |
 | Q9 | Bonding and loading `1zpd` (excl. rendering) | < 1 s | O(n²) | Met: ~0.1–0.2 s warm (`LoadPerformanceTest`, budget 3 s for CI) |
 | Q10 | Multi-chain helix/sheet assignment | Secondary structure applied only to the named chain | Incorrect (D2) | Met: `CifStructureReaderTest` |
+| Q11 | Show the solvent-excluded surface of `4hhb` (4,779 atoms) | Surface shown < 3 s; UI responsive while computing | No surfaces | Met: ~0.25 s warm, 0.6–0.8 s cold (`SurfacePerformanceTest`); ribbons + SES 267 fps. `1aon`: 1.2M triangles in 1–2 s, 107 fps at 70% opacity |

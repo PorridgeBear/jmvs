@@ -3,7 +3,7 @@
 | Concept | Approach | ADR |
 |---|---|---|
 | Configuration | `jmvs.properties` and `elements.properties` on the classpath, parsed once into immutable records, validated at startup | [0015](../adr/0015-typed-properties-configuration.md) |
-| Colouring | `ColourScheme` implementations shared by all display modes; colours stored separately from geometry; fixed chain palette | [0006](../adr/0006-renderer-neutral-scene-and-display-mode-spi.md), [0007](../adr/0007-instanced-rendering-incremental-recolouring.md) |
+| Colouring | `ColourScheme` implementations shared by all display modes and surfaces; colours stored separately from geometry; fixed chain palette | [0006](../adr/0006-renderer-neutral-scene-and-display-mode-spi.md), [0007](../adr/0007-instanced-rendering-incremental-recolouring.md) |
 | Units | Model and scene coordinates in ångströms (Å); element radii converted from RasMol units (÷ 250) when the table is loaded; no ad-hoc scale factors | |
 | Immutability | Structure model and config are immutable; scene data is built once per (structure, mode) | |
 | Threading | Render thread owns GL and UI; loading, bonding and scene building run on a background executor and post results with `Gdx.app.postRunnable` | [0005](../adr/0005-scene2d-ui-native-file-dialog.md) |

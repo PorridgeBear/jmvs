@@ -15,6 +15,7 @@ JMVS is a single-user desktop viewer for 3D macromolecular structures in the spi
 | F7 | Switch mode/colour at runtime; status bar | Recolouring without rebuilding geometry |
 | F8 | Pick an atom and show its details | Implemented ([ADR 0014](../adr/0014-camera-interaction-and-picking.md)) |
 | F9 | Show readable errors and keep running | New ([ADR 0011](../adr/0011-error-handling-and-logging.md)) |
+| F10 | Show a solvent-excluded or solvent-accessible surface over any display mode, coloured by the current scheme, opaque or transparent | New; computed in the background ([ADR 0017](../adr/0017-molecular-surfaces.md)) |
 
 ## 1.2 Quality goals
 

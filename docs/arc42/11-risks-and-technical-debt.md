@@ -27,3 +27,4 @@ Legacy risks and debts are listed in [legacy §11](legacy/11-risks-and-technical
 | A4 | No level-of-detail for > 1M atoms | Beyond target scenarios |
 | A5 | Installers bundle LWJGL natives for every platform (~10 MB) | Simpler build; could be filtered per OS |
 | A6 | Ribbons are flat strips without arrowheads or tubes | Parity with the legacy ribbons |
+| A7 | Surfaces cover the whole first model, not selections; grid surfaces round SAS creases (a few % less area) and coarsen above 8M voxels | Selections come in slice 9; accuracy is enough for viewing ([ADR 0017](../adr/0017-molecular-surfaces.md)) |

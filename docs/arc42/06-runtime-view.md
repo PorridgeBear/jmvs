@@ -52,6 +52,14 @@ Menu → `ViewerController.setScheme(id)` → compute a colour per instance/vert
 
 Menu → `ViewerController.setMode(id)` → use cached `Scene` for that mode or build it → `setScene` + `setColours`. Camera is not reset.
 
+## Show a surface
+
+*Surface* menu (or `--surface`) → `ViewerController.setSurface(kind)` → cached `Surface` for that kind, or status
+"Computing surface…" while `SurfaceBuilder` runs on the background executor → `postRunnable`: `StructureRenderer.setSurface`.
+A newer request (other kind, None, another file) bumps a generation counter; the superseded build stops at its next
+check and its result is dropped. Opening a file keeps the chosen kind and rebuilds it for the new structure. Colour
+scheme changes recolour the surface with the scene; opacity changes only set a uniform.
+
 ## Pick an atom
 
 Click (without drag) → `ScreenPicker` casts a ray, `Picking` finds the nearest pick target → controller updates selection → renderer sets the highlight flag; status bar shows atom details. Clicking empty space or pressing Esc clears the selection.

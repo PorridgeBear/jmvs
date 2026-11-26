@@ -8,10 +8,11 @@ import java.util.List;
 import java.util.Properties;
 
 /**
- * Viewer settings from {@code jmvs.properties}: enabled display modes and colour schemes (by id, in menu order)
- * and the defaults.
+ * Viewer settings from {@code jmvs.properties}: enabled display modes and colour schemes (by id, in menu order),
+ * the defaults, and molecular surface settings.
  */
-public record ViewerConfig(List<String> modes, String defaultMode, List<String> schemes, String defaultScheme) {
+public record ViewerConfig(List<String> modes, String defaultMode, List<String> schemes, String defaultScheme,
+                           SurfaceSettings surface) {
 
     public ViewerConfig {
         modes = List.copyOf(modes);
@@ -33,7 +34,7 @@ public record ViewerConfig(List<String> modes, String defaultMode, List<String> 
 
     public static ViewerConfig parse(Properties p) {
         return new ViewerConfig(list(p, "display.modes"), required(p, "display.default"),
-                list(p, "colour.schemes"), required(p, "colour.default"));
+                list(p, "colour.schemes"), required(p, "colour.default"), SurfaceSettings.parse(p));
     }
 
     private static List<String> list(Properties p, String key) {

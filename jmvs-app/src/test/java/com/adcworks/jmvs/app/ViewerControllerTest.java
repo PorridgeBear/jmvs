@@ -4,6 +4,7 @@ import com.adcworks.jmvs.core.chem.ElementTable;
 import com.adcworks.jmvs.core.io.StructureReaders;
 import com.adcworks.jmvs.scene.Registry;
 import com.adcworks.jmvs.scene.Scene;
+import com.adcworks.jmvs.scene.surface.Surface;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -12,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,6 +58,14 @@ class ViewerControllerTest {
                 @Override
                 public void loadFailed(String message) {
                     events.add("failed " + message);
+                }
+
+                @Override
+                public void surfaceChanged(Optional<Surface> surface) {
+                }
+
+                @Override
+                public void surfaceOpacityChanged(float opacity) {
                 }
             });
 
@@ -123,6 +133,8 @@ class ViewerControllerTest {
             public void coloursChanged(int[] colours) { }
             public void selectionChanged(OptionalInt atom) { }
             public void loadFailed(String message) { }
+            public void surfaceChanged(Optional<Surface> surface) { }
+            public void surfaceOpacityChanged(float opacity) { }
         });
 
         deferred.open(DATA.resolve("1crn.cif"));

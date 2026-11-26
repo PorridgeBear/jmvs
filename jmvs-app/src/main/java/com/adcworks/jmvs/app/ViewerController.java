@@ -11,6 +11,9 @@ import com.adcworks.jmvs.scene.Scene;
 import com.adcworks.jmvs.scene.colour.ColourScheme;
 import com.adcworks.jmvs.scene.colour.Legend;
 import com.adcworks.jmvs.scene.mode.DisplayMode;
+import com.adcworks.jmvs.scene.surface.Surface;
+import com.adcworks.jmvs.scene.surface.SurfaceBuilder;
+import com.adcworks.jmvs.scene.surface.SurfaceKind;
 
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -18,7 +21,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Application state and use cases, independent of libGDX: the loaded structure, display mode, colour scheme and
@@ -48,6 +53,11 @@ public final class ViewerController {
         void selectionChanged(OptionalInt atom);
 
         void loadFailed(String message);
+
+        /** The surface to draw over the scene changed; empty while none is chosen or one is being computed. */
+        void surfaceChanged(Optional<Surface> surface);
+
+        void surfaceOpacityChanged(float opacity);
     }
 
     private record Loaded(Structure structure, Scene scene, int[] colours) {
@@ -66,6 +76,13 @@ public final class ViewerController {
     private OptionalInt selection = OptionalInt.empty();
     private int loadGeneration;
     private boolean loading;
+    private final SurfaceBuilder surfaceBuilder;
+    private final Map<SurfaceKind, Surface> surfaces = new HashMap<>();
+    /** Incremented on every surface request; read by background builds to stop when superseded. */
+    private final AtomicInteger surfaceGeneration = new AtomicInteger();
+    private Optional<SurfaceKind> surfaceKind = Optional.empty();
+    private float surfaceOpacity = 1f;
+    private boolean surfaceBuilding;
 
     public ViewerController(StructureReaders readers, Registry registry, Executor background, Executor ui,
                             Listener listener) {
@@ -76,6 +93,7 @@ public final class ViewerController {
         this.listener = listener;
         this.mode = registry.defaultMode();
         this.preferredScheme = registry.defaultScheme();
+        this.surfaceBuilder = new SurfaceBuilder(registry.surface());
     }
 
     public Registry registry() {
@@ -103,6 +121,20 @@ public final class ViewerController {
         return loading;
     }
 
+    /** The chosen surface kind, if any; it stays chosen when another file is opened. */
+    public Optional<SurfaceKind> surfaceKind() {
+        return surfaceKind;
+    }
+
+    public float surfaceOpacity() {
+        return surfaceOpacity;
+    }
+
+    /** Whether the chosen surface is being computed in the background. */
+    public boolean isSurfaceBuilding() {
+        return surfaceBuilding;
+    }
+
     public boolean supportsFile(String fileName) {
         return readers.supports(fileName);
     }
@@ -113,6 +145,7 @@ public final class ViewerController {
     public void open(Path path) {
         int generation = ++loadGeneration;
         loading = true;
+        cancelSurface();
         listener.loadingStarted(path.getFileName().toString());
         DisplayMode modeAtStart = mode;
         ColourScheme schemeAtStart = scheme();
@@ -147,6 +180,29 @@ public final class ViewerController {
         preferredScheme = registry.scheme(id);
         if (structure != null) {
             listener.coloursChanged(scheme().colours(structure));
+        }
+    }
+
+    /**
+     * Shows a surface over the scene, or none. Surfaces are computed in the background, once per kind for each
+     * loaded structure.
+     */
+    public void setSurface(Optional<SurfaceKind> kind) {
+        if (kind.equals(surfaceKind)) {
+            return;
+        }
+        surfaceKind = kind;
+        requestSurface();
+    }
+
+    /**
+     * Surface opacity from 0 to 1; values outside are clamped.
+     */
+    public void setSurfaceOpacity(float opacity) {
+        float clamped = Math.clamp(opacity, 0f, 1f);
+        if (clamped != surfaceOpacity) {
+            surfaceOpacity = clamped;
+            listener.surfaceOpacityChanged(clamped);
         }
     }
 
@@ -187,6 +243,63 @@ public final class ViewerController {
         return scenes.computeIfAbsent(mode.id(), id -> mode.build(structure));
     }
 
+    private void requestSurface() {
+        int generation = surfaceGeneration.incrementAndGet();
+        if (structure == null) {
+            surfaceBuilding = false;
+            return;
+        }
+        Optional<Surface> cached = surfaceKind.map(surfaces::get);
+        if (surfaceKind.isEmpty() || cached.isPresent()) {
+            surfaceBuilding = false;
+            listener.surfaceChanged(cached);
+            return;
+        }
+        surfaceBuilding = true;
+        listener.surfaceChanged(Optional.empty());
+        Structure target = structure;
+        SurfaceKind kind = surfaceKind.get();
+        background.execute(() -> {
+            try {
+                long start = System.nanoTime();
+                Surface surface = surfaceBuilder.build(target, kind, () -> surfaceGeneration.get() != generation);
+                LOG.log(System.Logger.Level.INFO, String.format(Locale.ROOT,
+                        "Built %s surface of %s: %d triangles, %.0f Å² in %d ms", kind.id(),
+                        target.name(), surface.triangleCount(), surface.area(),
+                        (System.nanoTime() - start) / 1_000_000));
+                ui.execute(() -> surfaceBuilt(generation, target, surface));
+            } catch (CancellationException e) {
+                LOG.log(System.Logger.Level.DEBUG, "Surface build superseded");
+            } catch (RuntimeException e) {
+                LOG.log(System.Logger.Level.ERROR, "Cannot compute surface of " + target.name(), e);
+                ui.execute(() -> surfaceFailed(generation, "Cannot compute surface: " + e));
+            }
+        });
+    }
+
+    /** Stops any surface build, e.g. while another file loads. */
+    private void cancelSurface() {
+        surfaceGeneration.incrementAndGet();
+        surfaceBuilding = false;
+    }
+
+    private void surfaceBuilt(int generation, Structure builtFor, Surface surface) {
+        if (generation != surfaceGeneration.get() || builtFor != structure) {
+            return;
+        }
+        surfaces.put(surface.kind(), surface);
+        surfaceBuilding = false;
+        listener.surfaceChanged(Optional.of(surface));
+    }
+
+    private void surfaceFailed(int generation, String message) {
+        if (generation != surfaceGeneration.get()) {
+            return;
+        }
+        surfaceBuilding = false;
+        listener.loadFailed(message);
+    }
+
     private void shown(int generation, Loaded loaded, DisplayMode builtFor, ColourScheme colouredWith) {
         if (generation != loadGeneration) {
             return;
@@ -195,12 +308,14 @@ public final class ViewerController {
         structure = loaded.structure();
         scenes.clear();
         scenes.put(builtFor.id(), loaded.scene());
+        surfaces.clear();
         selection = OptionalInt.empty();
         // Mode or scheme may have changed while loading.
         Scene scene = builtFor == mode ? loaded.scene() : scene();
         int[] colours = colouredWith == scheme() ? loaded.colours() : scheme().colours(structure);
         listener.structureShown(scene, colours);
         listener.selectionChanged(selection);
+        requestSurface();
     }
 
     private void failed(int generation, String message) {
@@ -209,5 +324,7 @@ public final class ViewerController {
         }
         loading = false;
         listener.loadFailed(message);
+        // The load cancelled the current structure's surface build.
+        requestSurface();
     }
 }

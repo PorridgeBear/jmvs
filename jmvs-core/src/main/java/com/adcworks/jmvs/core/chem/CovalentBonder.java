@@ -4,9 +4,7 @@ import com.adcworks.jmvs.core.model.Atom;
 import com.adcworks.jmvs.core.model.Bond;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Infers covalent bonds with RasMol's distance rules (https://www.umass.edu/microbio/rasmol/rasbonds.htm),
@@ -52,31 +50,17 @@ public final class CovalentBonder {
             return List.of();
         }
         float cellSize = fast ? FAST_MAX_DISTANCE : maxSlowDistance(atoms);
-        Map<Long, List<Atom>> grid = new HashMap<>();
-        for (Atom atom : atoms) {
-            grid.computeIfAbsent(key(cell(atom.x(), cellSize), cell(atom.y(), cellSize), cell(atom.z(), cellSize)),
-                    k -> new ArrayList<>()).add(atom);
-        }
+        SpatialGrid grid = SpatialGrid.of(atoms, cellSize);
 
         List<Bond> bonds = new ArrayList<>();
         List<Atom> neighbours = new ArrayList<>();
         for (Atom atom : atoms) {
-            int cx = cell(atom.x(), cellSize), cy = cell(atom.y(), cellSize), cz = cell(atom.z(), cellSize);
             neighbours.clear();
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        List<Atom> cellAtoms = grid.get(key(cx + dx, cy + dy, cz + dz));
-                        if (cellAtoms != null) {
-                            for (Atom other : cellAtoms) {
-                                if (other.index() > atom.index()) {
-                                    neighbours.add(other);
-                                }
-                            }
-                        }
-                    }
+            grid.forEachCandidate(atom.x(), atom.y(), atom.z(), cellSize, other -> {
+                if (other.index() > atom.index()) {
+                    neighbours.add(other);
                 }
-            }
+            });
             neighbours.sort((p, q) -> Integer.compare(p.index(), q.index()));
             for (Atom other : neighbours) {
                 if (isBonded(atom, other, fast)) {
@@ -93,13 +77,5 @@ public final class CovalentBonder {
             maxRadius = Math.max(maxRadius, atom.element().covalentRadius());
         }
         return 2 * maxRadius + RADII_TOLERANCE;
-    }
-
-    private static int cell(float coordinate, float cellSize) {
-        return (int) Math.floor(coordinate / cellSize);
-    }
-
-    private static long key(int x, int y, int z) {
-        return ((long) (x & 0x1FFFFF) << 42) | ((long) (y & 0x1FFFFF) << 21) | (z & 0x1FFFFF);
     }
 }

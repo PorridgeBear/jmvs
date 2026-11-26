@@ -13,6 +13,7 @@ Guidance for AI coding agents and contributors working on JMVS, a RasMol-like 3D
 | `legacy-app/` | Legacy Java3D application, archived as a standalone build (not part of the root build or CI) |
 | `build-logic/` | `jmvs.java-conventions` plugin (Java 25 toolchain, JUnit, `-Werror`) |
 | `gradle/libs.versions.toml`, `gradle/verification-metadata.xml` | Dependency versions and checksums |
+| `LEGACY.md` | Project history since 1999 and screenshots comparing the app with the 2022 Java3D version |
 | `data/` | Sample structures used by tests and for trying the viewer; see [`data/README.md`](data/README.md) for why each is there |
 | `docs/arc42/`, `docs/adr/` | To-be architecture and decisions |
 | `docs/arc42/legacy/`, `docs/adr/legacy/` | As-is documentation of the legacy app |
@@ -37,9 +38,10 @@ Visual and performance checks (render once to a PNG, or rotate and log the frame
 ./gradlew :jmvs-app:installDist
 jmvs-app/build/install/jmvs/bin/jmvs data/1usc.cif --mode ribbons --scheme structure --screenshot /tmp/1usc.png
 jmvs-app/build/install/jmvs/bin/jmvs data/1zpd.cif --mode balls --benchmark 5
+jmvs-app/build/install/jmvs/bin/jmvs data/4hhb.cif --mode ribbons --scheme chain --surface ses --surface-opacity 0.5 --screenshot /tmp/4hhb.png
 ```
 
-Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`. Scheme ids: `cpk`, `chain`, `group`, `structure`, `bfactor`, `confidence`.
+Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`. Scheme ids: `cpk`, `chain`, `group`, `structure`, `bfactor`, `confidence`. Surface ids: `ses`, `sas`.
 
 ## Architecture rules
 
@@ -74,5 +76,6 @@ Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`. Scheme ids: `cpk`, `ch
 - Legacy docs are a record of the as-is system: do not edit them, except to add a *Superseded by* line to a legacy ADR.
 - Record new or changed decisions as a new ADR in `docs/adr/` (next free number) and add it to `docs/adr/README.md`; supersede rather than rewrite accepted ADRs.
 - Keep `docs/arc42/` and the status table in `docs/modernisation.md` in sync with the code.
-- When adding a user-visible display mode, colour scheme or other visual feature, add an example to the image table at the top of the root `README.md`: render it with `--screenshot` into `docs/images/<sample>-<mode>-<scheme>.png` (scaled to 1664 px wide), and keep the table on one row by narrowing the cells if needed.
+- The root `README.md` describes the app as it is now, opening with a gallery. When adding a user-visible display mode, colour scheme or other visual feature, add it to the feature list and a picture to the gallery: render it with `--screenshot` into `docs/images/<sample>-<mode>-<scheme>.png` (scaled to 1664 px wide) and add a captioned cell, keeping rows of three (replace a weaker picture rather than leaving a partial row).
+- `LEGACY.md` holds the project history and the comparison with the 2022 Java3D app; treat it like the legacy docs and don't add new features to it.
 - Keep [`docs/roadmap.md`](docs/roadmap.md) current: when a slice starts or finishes, update its *Status* in the overview table, the Mermaid diagram class and the *Status* line of its section in the same pull request.

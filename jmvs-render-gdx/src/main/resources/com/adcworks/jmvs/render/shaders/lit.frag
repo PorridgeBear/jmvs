@@ -1,10 +1,12 @@
-// Two-sided Blinn-Phong lighting with one directional light. Colour alpha > 1.5 marks the selected atom.
+// Two-sided Blinn-Phong lighting with one directional light. Colour alpha > 1.5 marks the selected atom;
+// u_opacity is the output alpha (below 1 only for transparent surfaces).
 #ifdef GL_ES
 precision mediump float;
 #endif
 
 uniform vec3 u_cameraPos;
 uniform vec3 u_lightDir;
+uniform float u_opacity;
 
 varying vec3 v_normal;
 varying vec3 v_world;
@@ -24,5 +26,5 @@ void main() {
         base = mix(base, vec3(1.0, 0.95, 0.2), 0.65);
     }
     vec3 colour = base * (0.28 + 0.72 * diffuse) + vec3(0.3) * specular;
-    gl_FragColor = vec4(colour, 1.0);
+    gl_FragColor = vec4(colour, u_opacity);
 }
