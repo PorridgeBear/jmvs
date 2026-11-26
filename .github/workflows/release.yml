@@ -57,7 +57,7 @@ jobs:
         # The headless runner has no system menu directories, which the .deb's menu shortcut needs.
         run: |
           sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri
-          sudo mkdir -p /etc/xdg/menus /usr/share/applications
+          sudo mkdir -p /etc/xdg/menus /usr/share/applications /usr/share/desktop-directories
       - name: Smoke test installer
         shell: bash
         env:
