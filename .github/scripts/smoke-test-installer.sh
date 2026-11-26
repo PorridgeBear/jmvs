@@ -28,7 +28,7 @@ case "$installer" in
         ;;
     *.deb)
         sudo apt-get install -y "$installer"
-        ls /usr/share/applications/*jmvs*.desktop
+        find /usr/local/share/applications /usr/share/applications -name "*jmvs*.desktop" 2>/dev/null | grep .
         app=/opt/jmvs/bin/JMVS
         runner=(xvfb-run -a -s "-screen 0 1280x800x24")
         ;;
