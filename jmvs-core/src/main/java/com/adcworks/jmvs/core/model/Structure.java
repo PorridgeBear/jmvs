@@ -1,5 +1,6 @@
 package com.adcworks.jmvs.core.model;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,9 +21,10 @@ public final class Structure {
     private final BoundingSphere boundingSphere;
     private final boolean hasHydrogens;
     private final int distinctChainIds;
+    private final boolean secondaryStructureAnnotated;
 
     Structure(String name, List<Model> models, List<Chain> chains, List<Residue> residues, List<Atom> atoms,
-              List<Bond> bonds, int distinctChainIds) {
+              List<Bond> bonds, int distinctChainIds, boolean secondaryStructureAnnotated) {
         this.name = name;
         this.models = List.copyOf(models);
         this.chains = List.copyOf(chains);
@@ -33,6 +35,46 @@ public final class Structure {
         this.boundingSphere = BoundingSphere.of(bounds, this.atoms);
         this.hasHydrogens = this.atoms.stream().anyMatch(Atom::isHydrogen);
         this.distinctChainIds = distinctChainIds;
+        this.secondaryStructureAnnotated = secondaryStructureAnnotated;
+    }
+
+    private Structure(Structure source, List<Residue> residues) {
+        this.name = source.name;
+        this.models = source.models;
+        this.chains = source.chains;
+        this.residues = List.copyOf(residues);
+        this.atoms = source.atoms;
+        this.bonds = source.bonds;
+        this.bounds = source.bounds;
+        this.boundingSphere = source.boundingSphere;
+        this.hasHydrogens = source.hasHydrogens;
+        this.distinctChainIds = source.distinctChainIds;
+        this.secondaryStructureAnnotated = source.secondaryStructureAnnotated;
+    }
+
+    /**
+     * A copy of this structure whose residues have the given secondary structure, one entry per residue in
+     * {@link #residues()} order. Models, chains, atoms and bonds are shared, so atom indices stay valid.
+     */
+    public Structure withSecondaryStructure(List<SecondaryStructure> perResidue) {
+        if (perResidue.size() != residues.size()) {
+            throw new IllegalArgumentException(
+                    "Expected %d secondary structure entries, got %d".formatted(residues.size(), perResidue.size()));
+        }
+        List<Residue> updated = new ArrayList<>(residues.size());
+        for (Residue r : residues) {
+            updated.add(new Residue(r.index(), r.chain(), r.name(), r.seqId(), r.insertionCode(), r.polymer(),
+                    perResidue.get(r.index()), r.firstAtom(), r.atomCount()));
+        }
+        return new Structure(this, updated);
+    }
+
+    /**
+     * Whether the file this structure was read from carried any secondary-structure annotation (helices, turns or
+     * sheets).
+     */
+    public boolean secondaryStructureAnnotated() {
+        return secondaryStructureAnnotated;
     }
 
     public String name() {

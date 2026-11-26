@@ -1,6 +1,7 @@
 package com.adcworks.jmvs.app.ui;
 
 import com.adcworks.jmvs.app.ViewerController;
+import com.adcworks.jmvs.core.model.SecondaryStructureSource;
 import com.adcworks.jmvs.scene.colour.ColourScheme;
 import com.adcworks.jmvs.scene.colour.Legend;
 import com.adcworks.jmvs.scene.colour.Rgb;
@@ -22,6 +23,7 @@ import com.kotcrab.vis.ui.widget.MenuItem;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -57,6 +59,8 @@ public final class ViewerUi {
     private final ViewerController controller;
     private final Map<String, MenuItem> modeItems = new HashMap<>();
     private final Map<String, MenuItem> schemeItems = new HashMap<>();
+    private final Map<SecondaryStructureSource, MenuItem> secondaryStructureItems =
+            new EnumMap<>(SecondaryStructureSource.class);
     private final Map<Optional<SurfaceKind>, MenuItem> surfaceItems = new HashMap<>();
     private final Map<String, MenuItem> opacityItems = new HashMap<>();
     private final VisLabel status = new VisLabel(HINT);
@@ -83,6 +87,15 @@ public final class ViewerUi {
                 refresh();
             });
             modeItems.put(mode.id(), item);
+            display.addItem(item);
+        }
+        display.addSeparator();
+        for (SecondaryStructureSource source : SecondaryStructureSource.values()) {
+            MenuItem item = item(secondaryStructureName(source), () -> {
+                controller.setSecondaryStructureSource(source);
+                refresh();
+            });
+            secondaryStructureItems.put(source, item);
             display.addItem(item);
         }
         menuBar.addMenu(display);
@@ -162,6 +175,10 @@ public final class ViewerUi {
         menu.addItem(item);
     }
 
+    private static String secondaryStructureName(SecondaryStructureSource source) {
+        return "Secondary structure: " + source.displayName();
+    }
+
     private static String surfaceName(Optional<SurfaceKind> kind) {
         return kind.map(SurfaceKind::displayName).orElse("None");
     }
@@ -197,6 +214,8 @@ public final class ViewerUi {
             item.setText((s.id().equals(scheme.id()) ? CURRENT : OTHER) + s.displayName());
             item.setDisabled(!controller.mode().supports(s));
         });
+        secondaryStructureItems.forEach((source, item) -> item.setText(
+                (source == controller.secondaryStructureSource() ? CURRENT : OTHER) + secondaryStructureName(source)));
         surfaceItems.forEach((kind, item) ->
                 item.setText((kind.equals(controller.surfaceKind()) ? CURRENT : OTHER) + surfaceName(kind)));
         OPACITY_ORDER.forEach(label -> {
@@ -208,6 +227,9 @@ public final class ViewerUi {
         String text = controller.structure().map(s -> "%s  |  %d atoms, %d chains  |  %s, %s".formatted(
                 s.name(), s.atoms().size(), s.distinctChainIds(), controller.mode().displayName(),
                 scheme.displayName())).orElse(HINT);
+        if (controller.isSecondaryStructureComputed()) {
+            text += ", computed secondary structure";
+        }
         if (controller.structure().isPresent() && controller.surfaceKind().isPresent()) {
             text += controller.isSurfaceBuilding() ? "  |  Computing surface..."
                     : "  |  " + controller.surfaceKind().get().displayName() + " surface";

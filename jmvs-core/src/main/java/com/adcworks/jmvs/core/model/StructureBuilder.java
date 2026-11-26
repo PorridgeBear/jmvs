@@ -125,7 +125,7 @@ public final class StructureBuilder {
         for (Model model : modelList) {
             bonds.addAll(bonder.bond(atoms.subList(model.firstAtom(), model.firstAtom() + model.atomCount()), fast));
         }
-        return new Structure(name, modelList, chains, residues, atoms, bonds, chainOrder.size());
+        return new Structure(name, modelList, chains, residues, atoms, bonds, chainOrder.size(), !ranges.isEmpty());
     }
 
     private SecondaryStructure secondaryStructureOf(String chainId, PendingResidue residue) {

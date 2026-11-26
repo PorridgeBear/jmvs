@@ -25,8 +25,8 @@ colour it by element, chain, residue, secondary structure, B-factor or AlphaFold
       <sub><b>Balls, at scale</b><br>GroEL–GroES (<code>1aon</code>): 58,870 atoms in 35 chains, rotating smoothly</sub>
     </td>
     <td align="center" valign="top" width="33%">
-      <a href="docs/images/4hhb-ribbons-structure.png"><img src="docs/images/4hhb-ribbons-structure.png" width="260" alt="4hhb ribbons, structure"></a><br>
-      <sub><b>Ribbons</b><br>Haemoglobin's helices, coloured by secondary structure</sub>
+      <a href="docs/images/af-p69905-noss-ribbons-structure.png"><img src="docs/images/af-p69905-noss-ribbons-structure.png" width="260" alt="AlphaFold model without annotation, ribbons, computed secondary structure"></a><br>
+      <sub><b>Computed secondary structure</b><br>Ribbons of an AlphaFold model with no annotation in the file: helices and turns assigned from backbone hydrogen bonds</sub>
     </td>
     <td align="center" valign="top" width="33%">
       <a href="docs/images/1crn-ballsandsticks-cpk.png"><img src="docs/images/1crn-ballsandsticks-cpk.png" width="260" alt="1crn balls and sticks, CPK"></a><br>
@@ -65,7 +65,9 @@ colour it by element, chain, residue, secondary structure, B-factor or AlphaFold
 **Structures**
 * PDBx/mmCIF files, plain, gzipped (`.cif.gz`) or BinaryCIF (`.bcif`), read with RCSB's
   [ciftools-java](https://github.com/rcsb/ciftools-java).
-* Covalent bonds inferred with RasMol's rules; helices, sheets and turns read from the file and applied per chain.
+* Covalent bonds inferred with RasMol's rules; helices, sheets and turns read from the file and applied per chain,
+  or computed from backbone hydrogen bonds (a DSSP subset) when the file has none, as in predicted models. The
+  *Display* menu or `--ss` chooses *Auto*, *From file* or *Computed*.
 * Hydrogens, alternate atom positions (one kept per atom) and multi-model NMR files (models drawn overlaid).
 
 **Interaction**
@@ -105,11 +107,12 @@ R resets the view, Esc clears the selection.
 
 Options choose the view from the command line, or render one screenshot or measure the frame rate and exit:
 
-	jmvs [file] [--mode <id>] [--scheme <id>] [--surface ses|sas] [--surface-opacity <0-1>]
-	     [--screenshot <png>] [--benchmark <seconds>]
+	jmvs [file] [--mode <id>] [--scheme <id>] [--ss auto|file|computed] [--surface ses|sas]
+	     [--surface-opacity <0-1>] [--screenshot <png>] [--benchmark <seconds>]
 
 Mode ids are `balls`, `sticks`, `ballsandsticks` and `ribbons`; scheme ids are `cpk`, `chain`, `group`, `structure`,
-`bfactor` and `confidence`. For example, after `./gradlew :jmvs-app:installDist`:
+`bfactor` and `confidence`. `--ss` chooses where secondary structure comes from: the file's annotation if it has
+any (`auto`, the default), the file only, or computed. For example, after `./gradlew :jmvs-app:installDist`:
 
 	jmvs-app/build/install/jmvs/bin/jmvs data/4hhb.cif --mode ribbons --scheme chain --surface ses --screenshot 4hhb.png
 

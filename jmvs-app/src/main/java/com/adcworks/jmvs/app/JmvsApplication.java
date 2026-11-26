@@ -72,6 +72,7 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
         ui = new ViewerUi(stage, controller, this);
         options.mode().ifPresent(controller::setMode);
         options.scheme().ifPresent(controller::setScheme);
+        options.secondaryStructure().ifPresent(controller::setSecondaryStructureSource);
         options.surface().ifPresent(kind -> controller.setSurface(Optional.of(kind)));
         options.surfaceOpacity().ifPresent(controller::setSurfaceOpacity);
         ui.refresh();

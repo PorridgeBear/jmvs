@@ -5,7 +5,7 @@
 - **Performance**: load time, frame rate, responsiveness when switching mode/colour
 - **Portability**: macOS, Windows, Linux; installer without a JDK
 - **Maintainability**: renderer isolated; core and scene testable without a GPU; easy to add modes
-- **Correctness**: RasMol-equivalent bonding; correct secondary structure per chain
+- **Correctness**: RasMol-equivalent bonding; correct secondary structure per chain, read or computed
 - **Robustness**: bad input reported, app keeps running
 
 ## Scenarios
@@ -25,3 +25,4 @@ Reference machine: Apple M1-class Mac, integrated GPU, 2560×1504 back buffer (R
 | Q9 | Bonding and loading `1zpd` (excl. rendering) | < 1 s | O(n²) | Met: ~0.1–0.2 s warm (`LoadPerformanceTest`, budget 3 s for CI) |
 | Q10 | Multi-chain helix/sheet assignment | Secondary structure applied only to the named chain | Incorrect (D2) | Met: `CifStructureReaderTest` |
 | Q11 | Show the solvent-excluded surface of `4hhb` (4,779 atoms) | Surface shown < 3 s; UI responsive while computing | No surfaces | Met: ~0.25 s warm, 0.6–0.8 s cold (`SurfacePerformanceTest`); ribbons + SES 267 fps. `1aon`: 1.2M triangles in 1–2 s, 107 fps at 70% opacity |
+| Q12 | Unannotated structure (`AF-P69905-F1-model_v6-noss.cif`) in Ribbons, Structure colouring | Helices and sheets shown, assigned from the backbone | No (all coil) | Met: computed by default (*Auto*); 80–97% three-state agreement with the samples' file annotation, ~50 ms for `1aon` (`ComputedSecondaryStructureGoldenTest`) |

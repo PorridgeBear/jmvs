@@ -22,7 +22,7 @@ the *Status* line at the end of its section in the same pull request as the work
 | 2 | Open by ID | Getting data | High | S | 0 | ⏳ Planned |
 | 3 | Models and image export | Everyday use | Medium | S | 0 | ⏳ Planned |
 | 4 | Legacy PDB files | Getting data | Medium | S | 0 | ⏳ Planned |
-| 5 | Computed secondary structure | Predicted models | High | M | — | ⏳ Planned |
+| 5 | Computed secondary structure | Predicted models | High | M | — | ✅ Done |
 | 6 | Cartoon representation | Visualisation | High | M | 5 | ⏳ Planned |
 | 7 | Measurements and labels | Analysis | High | M | — | ⏳ Planned |
 | 8 | Biological assemblies | Biological context | High | M | — | ⏳ Planned |
@@ -51,7 +51,7 @@ flowchart LR
 
     classDef done fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20
     classDef inProgress fill:#fff3c4,stroke:#f9a825,color:#5d4000
-    class S0,S1,S11 done
+    class S0,S1,S5,S11 done
 ```
 
 ## Slices
@@ -134,7 +134,8 @@ and some files lack.
 
 **Done when** an AlphaFold model shows helices and sheets in ribbons and structure colouring.
 
-**Status: planned.**
+**Status: done.** DSSP subset in `jmvs-core` ([ADR 0018](adr/0018-computed-secondary-structure.md)); *Auto* uses it
+when the file has no annotation, and *Display* or `--ss` can force file or computed.
 
 ### 6. Cartoon representation
 

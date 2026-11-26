@@ -24,5 +24,6 @@ Terms from the [legacy glossary](legacy/12-glossary.md) still apply (mmCIF categ
 | Surface nets | Meshing a level set with one vertex per crossed grid cube (a dual of marching cubes) |
 | Icosphere | Sphere mesh made by subdividing an icosahedron; the instanced atom template |
 | Strangler migration | Building the new system next to the old one and removing the old one at parity |
+| DSSP | Define Secondary Structure of Proteins (Kabsch & Sander, 1983): assigns helices, strands and turns from backbone hydrogen bonds; JMVS computes a subset of it ([ADR 0018](../adr/0018-computed-secondary-structure.md)) |
 | Turn | Secondary structure element from `_struct_conf` with a `TURN_*` type |
 | jlink / jpackage | JDK tools that build a trimmed runtime / native installers |
