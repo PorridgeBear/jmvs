@@ -3,9 +3,16 @@ name: Release
 on:
   push:
     tags: ['v*']
+  # Dry runs build and smoke-test the installers without publishing a release.
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - .github/scripts/smoke-test-installer.sh
+      - jmvs-app/build.gradle.kts
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   package:
@@ -28,20 +35,50 @@ jobs:
           distribution: temurin
           java-version: 25
       - uses: gradle/actions/setup-gradle@v5
+      - name: Install WiX
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          echo "$USERPROFILE/.dotnet/tools" >> "$GITHUB_PATH"
+          "$USERPROFILE/.dotnet/tools/wix" extension add --global WixToolset.Util.wixext/5.0.2 WixToolset.UI.wixext/5.0.2
       - name: Build installer
         shell: bash
-        run: ./gradlew :jmvs-app:jpackage --console=plain -Pjmvs.packageType=${{ matrix.type }} -Pjmvs.version=${GITHUB_REF_NAME#v}
+        run: |
+          version=()
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then version=(-Pjmvs.version="${GITHUB_REF_NAME#v}"); fi
+          ./gradlew :jmvs-app:jpackage --console=plain -Pjmvs.packageType=${{ matrix.type }} ${version[@]+"${version[@]}"}
+      # CI runners have no GPU: Mesa's software OpenGL renders the smoke test on Windows and Linux.
+      - name: Install software OpenGL (Windows)
+        if: runner.os == 'Windows'
+        uses: ssciwr/setup-mesa-dist-win@v3
+      - name: Install virtual display (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xvfb libgl1-mesa-dri
+      - name: Smoke test installer
+        shell: bash
+        run: .github/scripts/smoke-test-installer.sh jmvs-app/build/jpackage/*.${{ matrix.type }} smoke-${{ matrix.type }}.png
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-${{ matrix.type }}
+          path: smoke-${{ matrix.type }}.png
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
           name: jmvs-${{ matrix.type }}
           path: jmvs-app/build/jpackage/*.${{ matrix.type }}
 
   release:
+    if: github.ref_type == 'tag'
     needs: package
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/download-artifact@v5
         with:
+          pattern: jmvs-*
           path: installers
           merge-multiple: true
       - name: Create release
