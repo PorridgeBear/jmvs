@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guidance for AI coding agents and contributors working on JMVS, a RasMol-like 3D molecular viewer in Java. The project is being modernised from a legacy Java3D app to a libGDX app; see [`docs/modernisation.md`](docs/modernisation.md) for the roadmap and status, and [`docs/README.md`](docs/README.md) for the architecture docs.
+Guidance for AI coding agents and contributors working on JMVS, a RasMol-like 3D molecular viewer in Java. It was modernised from a legacy Java3D app to a libGDX app ([`docs/modernisation.md`](docs/modernisation.md)); see [`docs/roadmap.md`](docs/roadmap.md) for planned features, and [`docs/README.md`](docs/README.md) for the architecture docs.
 
 ## Repository map
 
@@ -10,7 +10,7 @@ Guidance for AI coding agents and contributors working on JMVS, a RasMol-like 3D
 | `jmvs-scene/` | Renderer-neutral scene data, display modes, colour schemes, registry, `jmvs.properties` |
 | `jmvs-render-gdx/` | libGDX renderer, shaders, orbit camera, screen picking |
 | `jmvs-app/` | Launcher, controller, Scene2D/VisUI UI, packaging (`jpackage` task) |
-| `legacy-app/` | Legacy Java3D application, frozen; deleted at cutover |
+| `legacy-app/` | Legacy Java3D application, archived as a standalone build (not part of the root build or CI) |
 | `build-logic/` | `jmvs.java-conventions` plugin (Java 25 toolchain, JUnit, `-Werror`) |
 | `gradle/libs.versions.toml`, `gradle/verification-metadata.xml` | Dependency versions and checksums |
 | `data/` | Sample structures used by tests and for trying the viewer; see [`data/README.md`](data/README.md) for why each is there |
@@ -19,18 +19,17 @@ Guidance for AI coding agents and contributors working on JMVS, a RasMol-like 3D
 
 ## Build, run, test
 
-Any JDK 17–27 can run Gradle; toolchains download JDK 25 (new modules) and JDK 11 (`legacy-app`).
+Any JDK 17–27 can run Gradle; toolchains download JDK 25 (and JDK 11 for the standalone `legacy-app` build).
 
 ```sh
 ./gradlew build                                    # compile and test everything
 ./gradlew :jmvs-core:test                          # one module's tests
 ./gradlew :jmvs-app:run --args="data/1crn.cif"     # run the new app (optionally with a file)
-./gradlew :legacy-app:run                          # run the legacy app (macOS only)
+./gradlew -p legacy-app run                        # run the archived legacy app (macOS only)
 ./gradlew :jmvs-app:jpackage                       # native installer in jmvs-app/build/jpackage/
-./gradlew --write-verification-metadata sha256 help   # after changing dependencies
+./gradlew --write-verification-metadata sha256 help   # after changing dependencies (use an empty GRADLE_USER_HOME
+                                                      # and --no-configuration-cache so CI-only artifacts are included)
 ```
-
-Do not use plain `./gradlew run`: it starts both apps.
 
 Visual and performance checks (render once to a PNG, or rotate and log the frame rate):
 
@@ -49,7 +48,7 @@ Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`. Scheme ids: `cpk`, `ch
 - Display modes and colour schemes implement the renderer-neutral SPI in `jmvs-scene` and are registered in `Registry` and `jmvs.properties` ([ADR 0006](docs/adr/0006-renderer-neutral-scene-and-display-mode-spi.md)).
 - Geometry never carries colour; recolouring must not rebuild geometry ([ADR 0007](docs/adr/0007-instanced-rendering-incremental-recolouring.md)).
 - Shaders use GLSL ES 1.0 style (`attribute`, `varying`, `gl_FragColor`); `GlslCompatibility` turns them into GLSL 1.50.
-- Do not change `legacy-app/` except to keep it building until cutover.
+- Do not change `legacy-app/`: it is an archive of the original app, kept for posterity.
 
 ## Code conventions
 

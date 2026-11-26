@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "jmvs"
 
-include("jmvs-core", "jmvs-scene", "jmvs-render-gdx", "jmvs-app", "legacy-app")
+include("jmvs-core", "jmvs-scene", "jmvs-render-gdx", "jmvs-app")

@@ -12,7 +12,7 @@
 | Dependencies | Maven Central only, checksum-verified; no committed jars | [0010](../adr/0010-maven-central-dependencies-only.md) |
 | Input formats | PDBx/mmCIF (plain or gzip) and BinaryCIF | [0008](../adr/0008-mmcif-via-ciftools-java.md) |
 | Layering | `jmvs-core` and `jmvs-scene` free of GL/UI dependencies | [0002](../adr/0002-multi-module-build.md) |
-| Transitional | `legacy-app` on JDK 11 with vendored jars until cutover | [0003](../adr/0003-strangler-migration-legacy-module.md) |
+| Archive | `legacy-app` kept as a standalone JDK 11 build with vendored jars, outside the root build and CI | [0003](../adr/0003-strangler-migration-legacy-module.md) |
 
 ## Organisational
 

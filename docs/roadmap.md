@@ -53,10 +53,12 @@ base.
 
 - Run CI on GitHub; fix anything platform-specific.
 - Install and try the Windows and Linux installers; check quality scenarios on one of them.
-- Parity sign-off against the legacy screenshots, then delete `legacy-app/` and its vendored jars (cutover).
+- Parity sign-off against the legacy screenshots, then archive `legacy-app/` as a standalone build outside the root build and CI (cutover). It is kept for posterity rather than deleted.
 - First tagged release (`v2.0.0`) with installers.
 
-**Done when** a GitHub release has working installers for macOS, Windows and Linux and `legacy-app/` is gone.
+**Done when** a GitHub release has working installers for macOS, Windows and Linux and `legacy-app/` is no longer part of the build.
+
+**Status: done.** CI passes on all three OSes, each installer is smoke-tested in the release workflow, and `v2.0.0` is released.
 
 ### 1. AlphaFold-ready colouring
 

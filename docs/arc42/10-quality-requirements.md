@@ -12,12 +12,12 @@
 
 Reference machine: Apple M1-class Mac, integrated GPU, 2560×1504 back buffer (Retina). Samples are in `data/`. Frame rates are measured with `jmvs <file> --mode <id> --scheme chain --benchmark 5` (vsync off, continuous rotation).
 
-| ID | Scenario | Target | Legacy | Result (2026-11, macOS) |
+| ID | Scenario | Target | Legacy | Result (2026-11, macOS unless stated) |
 |----|----------|--------|--------|--------------------------|
 | Q1 | Open `1crn.cif` (327 atoms) | Rendered < 1 s after choosing the file | Unknown | Met: read and bonded in ~70 ms on first load |
 | Q2 | Open `1zpd.cif` (19,789 atoms) in Balls mode and rotate | Rendered < 3 s; rotation ≥ 60 fps | Likely failing | Met: loaded in 0.4–0.8 s (cold JVM); Balls 96 fps, Balls-and-sticks 108, Sticks 131, Ribbons 268. Stress test `1aon` (58,870 atoms): Balls 43 fps, Ribbons 211 |
 | Q3 | Switch colour scheme on `1zpd` | < 100 ms, no geometry rebuild | Full rebuild | Met by design: only colour buffers are rewritten ([ADR 0007](../adr/0007-instanced-rendering-incremental-recolouring.md)); not timed separately |
-| Q4 | Install and run on Windows and Linux | Installer from CI starts and loads `1crn` | Failing (macOS natives only) | Open: CI builds and tests on all three OSes; installers not yet run on Windows/Linux |
+| Q4 | Install and run on Windows and Linux | Installer from CI starts and loads `1crn` | Failing (macOS natives only) | Met: the release workflow installs the `.msi` (Windows Server) and `.deb` (Ubuntu), opens `1crn` and writes a screenshot, using Mesa software OpenGL; the `.dmg` was checked the same way on a Mac. GitHub's macOS runners have no hardware OpenGL, so there CI only checks that the app starts |
 | Q5 | Bond sets match RasMol rules | Spatial-grid bonds equal reference all-pairs bonds for all samples | Unverified | Met: `CovalentBonderParityTest` |
 | Q6 | Open an invalid or truncated file | Error dialog naming the file; previous structure still shown | Failing (`System.exit`) | Met: `CifStructureReaderTest`, `ViewerControllerTest` |
 | Q7 | Run core and scene tests on a machine without a GPU | All pass in CI | Partial | Met: no GL dependency in `jmvs-core`/`jmvs-scene` tests |

@@ -14,7 +14,7 @@ Split the build into Gradle modules:
 | `jmvs-scene` | Renderer-neutral scene data, display-mode and colour-scheme SPI, built-in modes | `jmvs-core` |
 | `jmvs-render-gdx` | libGDX renderer, camera, picking | `jmvs-scene`, libGDX |
 | `jmvs-app` | Launcher, UI, file handling, packaging | all of the above, libGDX |
-| `legacy-app` | Legacy Java3D app until cutover ([0003](0003-strangler-migration-legacy-module.md)) | none of the above |
+| `legacy-app` | Legacy Java3D app; since cutover a separate, standalone build, not a module ([0003](0003-strangler-migration-legacy-module.md)) | none of the above |
 
 Dependencies point one way: `jmvs-app → jmvs-render-gdx → jmvs-scene → jmvs-core`. Each module uses `implementation` dependencies by default and `api` only for types in its public signatures.
 

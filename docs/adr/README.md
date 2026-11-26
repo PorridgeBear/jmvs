@@ -6,7 +6,7 @@ Decisions for the modernised JMVS. The as-is records live in [`legacy/`](legacy/
 |---|---|---|---|
 | [0001](0001-java-25-gradle-9-toolchains.md) | Java 25 LTS with Gradle 9 toolchains and a version catalog | Accepted | |
 | [0002](0002-multi-module-build.md) | Multi-module build with one-way dependencies | Accepted | |
-| [0003](0003-strangler-migration-legacy-module.md) | Strangler migration with the legacy app kept as a module | Accepted (temporary) | |
+| [0003](0003-strangler-migration-legacy-module.md) | Strangler migration with the legacy app kept as a module | Completed | Legacy app archived as a standalone build |
 | [0004](0004-libgdx-rendering-engine.md) | libGDX (LWJGL3 backend) as the rendering engine | Accepted | Supersedes legacy 0001 |
 | [0005](0005-scene2d-ui-native-file-dialog.md) | Scene2D UI with a native file dialog | Accepted | Supersedes legacy 0006 |
 | [0006](0006-renderer-neutral-scene-and-display-mode-spi.md) | Renderer-neutral scene model with display-mode and colour-scheme SPI | Accepted | Supersedes legacy 0002 |

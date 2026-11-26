@@ -1,4 +1,4 @@
-// Legacy Java3D application, frozen until cutover (docs/adr/0003-strangler-migration-legacy-module.md).
+// Legacy Java3D application, archived as a standalone build (docs/adr/0003-strangler-migration-legacy-module.md).
 plugins {
     application
 }

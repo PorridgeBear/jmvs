@@ -1,6 +1,6 @@
 # 0003 Strangler migration with the legacy app kept as a module
 
-Status: Accepted (temporary — complete at cutover)
+Status: Completed (cutover in roadmap slice 0; legacy app archived, not deleted)
 
 ## Context
 Java3D cannot run on Java 25, so the new app cannot reuse the legacy rendering code. The legacy app is the only reference for expected visuals (screenshots in the root `README.md`) and behaviour (legacy F1–F8).
@@ -18,3 +18,9 @@ Java3D cannot run on Java 25, so the new app cannot reuse the legacy rendering c
 - Both apps can be run from one checkout during migration.
 - The build temporarily needs two JDKs and still contains vendored jars (legacy risk R3) and Sun sources (R4).
 - `legacy-app` is frozen: changes only to keep it building.
+
+## Outcome
+At cutover the owner chose to keep the legacy app in the repository for posterity instead of deleting it:
+- `legacy-app/` is a **standalone Gradle build** with its own `settings.gradle.kts` and checksums. It is not part of the root build or CI; run it with `./gradlew -p legacy-app run` (macOS only).
+- Its vendored jars (legacy risk R3) and Sun-copyright sources (R4) therefore remain, confined to `legacy-app/`; nothing in the new modules uses them.
+- The root build needs only JDK 25; JDK 11 is provisioned only when the legacy build is run.

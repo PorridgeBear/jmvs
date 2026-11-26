@@ -1,18 +1,18 @@
 # JMVS modernisation plan
 
-Living roadmap for moving JMVS from the legacy Java3D application to a modern, cross-platform viewer. Detailed rationale lives in the [to-be ADRs](adr/README.md) and [to-be arc42](arc42/); the as-is system is described in [`arc42/legacy/`](arc42/legacy/) and [`adr/legacy/`](adr/legacy/README.md). This document is the index and status tracker — update the status table as phases complete.
+Record of moving JMVS from the legacy Java3D application to a modern, cross-platform viewer. Detailed rationale lives in the [to-be ADRs](adr/README.md) and [to-be arc42](arc42/); the as-is system is described in [`arc42/legacy/`](arc42/legacy/) and [`adr/legacy/`](adr/legacy/README.md). This document is the index and status record; the modernisation is complete. Future features are planned in [`roadmap.md`](roadmap.md).
 
 ## Status
 
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Documentation: this plan, `AGENTS.md`, to-be ADRs and arc42 | Done |
-| 1 | Build foundation: Gradle 9 multi-module, toolchains, legacy module, CI | Done (CI not yet run on GitHub) |
+| 1 | Build foundation: Gradle 9 multi-module, toolchains, legacy module, CI | Done |
 | 2 | Core: domain model, mmCIF reading, bonding, tests | Done |
 | 3 | Scene: renderer-neutral scene model and display modes | Done |
 | 4 | Renderer: libGDX rendering, camera, picking | Done |
-| 5 | Application: launcher, UI, async loading, quality validation | Done on macOS; Windows/Linux validation open |
-| 6 | Packaging and cutover: installers, legacy removal | Packaging done (macOS `.dmg` verified); cutover open |
+| 5 | Application: launcher, UI, async loading, quality validation | Done |
+| 6 | Packaging and cutover: installers, legacy archived | Done |
 
 ## Problem
 
@@ -24,7 +24,7 @@ JMVS (~4k LOC) is a 1999/2003 Java3D viewer revived in 2022. The legacy [risks a
 |---|---|---|
 | Java | Java 25 LTS via Gradle toolchains; Gradle 9 wrapper; version catalog | [0001](adr/0001-java-25-gradle-9-toolchains.md) |
 | Build structure | Multi-module Gradle build with enforced dependency direction | [0002](adr/0002-multi-module-build.md) |
-| Migration | Strangler: legacy app kept as `legacy-app` on a JDK 11 toolchain until parity | [0003](adr/0003-strangler-migration-legacy-module.md) |
+| Migration | Strangler: legacy app kept as `legacy-app` on a JDK 11 toolchain until parity, then archived as a standalone build | [0003](adr/0003-strangler-migration-legacy-module.md) |
 | Rendering | libGDX (LWJGL3 backend) replaces Java3D/JOGL | [0004](adr/0004-libgdx-rendering-engine.md) |
 | UI | libGDX Scene2D UI + native file dialog | [0005](adr/0005-scene2d-ui-native-file-dialog.md) |
 | Extensibility | Renderer-neutral scene model; display-mode and colour-scheme SPI with built-in registry; no external jar loading | [0006](adr/0006-renderer-neutral-scene-and-display-mode-spi.md) |
@@ -47,7 +47,7 @@ jmvs-core/        model, chemistry (elements, RasMol bonding), io (ciftools adap
 jmvs-scene/       renderer-neutral scene data, DisplayMode/ColourScheme SPI, built-in modes and schemes
 jmvs-render-gdx/  libGDX renderer: instanced spheres/cylinders, ribbon meshes, lighting, camera, picking
 jmvs-app/         LWJGL3 launcher, Scene2D UI, file dialog, async loading, packaging
-legacy-app/       current app/ moved as-is on a JDK 11 toolchain; deleted at cutover
+legacy-app/       original app/ as-is on a JDK 11 toolchain; since cutover a standalone build (own settings), not a module
 ```
 
 Dependencies point one way: `jmvs-app → jmvs-render-gdx → jmvs-scene → jmvs-core`. Only `jmvs-render-gdx` and `jmvs-app` may depend on libGDX. See [05 Building block view](arc42/05-building-block-view.md).
@@ -60,8 +60,8 @@ References are to the legacy [risks and technical debt](arc42/legacy/11-risks-an
 |---|---|---|
 | R1 Java3D / JDK ≤ 11 lock | libGDX renderer; Java 25 | 1, 4 |
 | R2 macOS-only natives | LWJGL natives from Maven Central; CI on macOS, Linux, Windows | 1, 4 |
-| R3 Binary jars in git | Maven Central only; `app/libs` removed with `legacy-app` | 6 |
-| R4 Sun-copyright sources | Not ported; deleted with `legacy-app` | 6 |
+| R3 Binary jars in git | Maven Central only; the jars remain only in the archived, standalone `legacy-app` | 6 |
+| R4 Sun-copyright sources | Not ported; remain only in the archived `legacy-app` | 6 |
 | R5 Performance ceiling | Spatial-grid bonding, instancing, no per-atom logging, incremental recolouring | 2, 4 |
 | R6 `System.exit` in library code | Typed exceptions surfaced in the UI | 2, 5 |
 | R7 Relative shader paths | All resources loaded from the classpath | 4 |
@@ -125,14 +125,16 @@ References are to the legacy [risks and technical debt](arc42/legacy/11-risks-an
 - LWJGL3 launcher with macOS first-thread handling, Scene2D menus (Data, Display, Colour) and status bar, native open dialog, drag-and-drop, async loading with progress, error dialogs.
 - Validate [quality scenarios](arc42/10-quality-requirements.md) on macOS and one other OS.
 - Exit: feature parity with legacy F1–F8; quality targets met.
-- Outcome: F1–F9 implemented; quality results in [arc42 §10](arc42/10-quality-requirements.md) (1zpd Balls 96 fps). `--screenshot` and `--benchmark` options support manual checks. Open: run on Windows and Linux.
+- Outcome: F1–F9 implemented; quality results in [arc42 §10](arc42/10-quality-requirements.md) (1zpd Balls 96 fps). `--screenshot` and `--benchmark` options support manual checks. CI builds and tests on Windows and Linux; the installers render `1crn` there with Mesa software OpenGL.
 
 ### Phase 6 — Packaging and cutover
 
 - jpackage installers per OS built in CI on tags.
 - Parity check against the legacy screenshots, delete `legacy-app/`, dedupe sample data, refresh the README comparison screenshots in `docs/images/` (legacy ones are in `docs/images/legacy/`), update root `README.md`, `AGENTS.md`, arc42 risks, and mark [ADR 0003](adr/0003-strangler-migration-legacy-module.md) complete.
 - Exit: release tag with installers for macOS, Windows and Linux.
-- Outcome so far: `./gradlew :jmvs-app:jpackage` builds a 48 MB `.dmg` that starts and renders; `release.yml` packages on all three OSes on `v*` tags. Open: first tagged release, Windows/Linux installer checks, parity sign-off and legacy removal.
+- Outcome: `./gradlew :jmvs-app:jpackage` builds a 48 MB `.dmg`; `release.yml` packages on all three OSes on `v*` tags, installs WiX 5 on Windows, and smoke-tests each installer (dry runs on pull requests). Release `v2.0.0` has installers for macOS, Windows and Linux.
+- Cutover: instead of deleting `legacy-app/`, the owner kept it for posterity as a standalone build (`./gradlew -p legacy-app run`), outside the root build and CI ([ADR 0003](adr/0003-strangler-migration-legacy-module.md)). Its vendored jars and Sun sources stay with it.
+- Found on the first GitHub run: the dependency checksums lacked an artifact that only a clean Gradle cache resolves; regenerate them with an empty `GRADLE_USER_HOME`.
 
 ## Considerations
 
@@ -140,6 +142,5 @@ References are to the legacy [risks and technical debt](arc42/legacy/11-risks-an
 - libGDX on macOS needs GLFW on the first thread: handled with `-XstartOnFirstThread` and a launcher restart ([ADR 0004](adr/0004-libgdx-rendering-engine.md)).
 - The libGDX LWJGL3 backend targets desktop OpenGL; macOS caps at OpenGL 4.1, which is enough for instancing.
 - `ciftools-java` 9.0.0 works on Java 25.
-- `./gradlew run` starts both the legacy and the new app; use `:jmvs-app:run` or `:legacy-app:run`.
 - Legacy docs stay as written except for *Superseded by* lines; to-be docs refer to them as "legacy ADR-000n".
 - Revisit the to-be docs at cutover so they describe what was actually built.
