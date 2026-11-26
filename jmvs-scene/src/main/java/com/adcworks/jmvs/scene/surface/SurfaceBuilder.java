@@ -4,8 +4,10 @@ import com.adcworks.jmvs.core.chem.SpatialGrid;
 import com.adcworks.jmvs.core.model.Atom;
 import com.adcworks.jmvs.core.model.Structure;
 import com.adcworks.jmvs.scene.AtomRadii;
-import com.adcworks.jmvs.scene.TriangleMesh;
 import com.adcworks.jmvs.scene.config.SurfaceSettings;
+import com.adcworks.jmvs.scene.mesh.Grid;
+import com.adcworks.jmvs.scene.mesh.MeshChunks;
+import com.adcworks.jmvs.scene.mesh.SurfaceNets;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,7 +66,7 @@ public final class SurfaceBuilder {
         SurfaceNets.Mesh mesh = SurfaceNets.extract(grid, field, cancelled);
         check(cancelled);
         int[] vertexAtoms = vertexAtoms(mesh, atoms, radii, maxRadius + probe + band);
-        return new Surface(kind, chunks(mesh, vertexAtoms), area(mesh));
+        return new Surface(kind, MeshChunks.split(mesh, vertexAtoms), MeshChunks.area(mesh));
     }
 
     static List<Atom> surfaceAtoms(Structure structure) {
@@ -209,79 +211,6 @@ public final class SurfaceBuilder {
             result[v] = best.atom >= 0 ? best.atom : atoms.getFirst().index();
         }
         return result;
-    }
-
-    /**
-     * Splits the welded mesh into meshes of at most {@link Surface#MAX_MESH_VERTICES} vertices, duplicating
-     * vertices shared across a split.
-     */
-    static List<TriangleMesh> chunks(SurfaceNets.Mesh mesh, int[] vertexAtoms) {
-        int[] tris = mesh.triangles();
-        int[] local = new int[mesh.vertexCount()];
-        int[] stamp = new int[mesh.vertexCount()];
-        Arrays.fill(stamp, -1);
-        List<TriangleMesh> chunks = new ArrayList<>();
-        int chunk = 0;
-        int[] vertices = new int[Surface.MAX_MESH_VERTICES];
-        int vertexCount = 0;
-        SurfaceNets.IntList indices = new SurfaceNets.IntList();
-        for (int t = 0; t < tris.length; t += 3) {
-            int fresh = 0;
-            for (int c = 0; c < 3; c++) {
-                if (stamp[tris[t + c]] != chunk) {
-                    fresh++;
-                }
-            }
-            if (vertexCount + fresh > Surface.MAX_MESH_VERTICES) {
-                chunks.add(chunk(mesh, vertexAtoms, vertices, vertexCount, indices.toArray()));
-                chunk++;
-                vertexCount = 0;
-                indices = new SurfaceNets.IntList();
-            }
-            int[] tri = new int[3];
-            for (int c = 0; c < 3; c++) {
-                int v = tris[t + c];
-                if (stamp[v] != chunk) {
-                    stamp[v] = chunk;
-                    local[v] = vertexCount;
-                    vertices[vertexCount++] = v;
-                }
-                tri[c] = local[v];
-            }
-            indices.add(tri[0], tri[1], tri[2]);
-        }
-        if (indices.size() > 0) {
-            chunks.add(chunk(mesh, vertexAtoms, vertices, vertexCount, indices.toArray()));
-        }
-        return chunks;
-    }
-
-    private static TriangleMesh chunk(SurfaceNets.Mesh mesh, int[] vertexAtoms, int[] vertices, int count,
-                                      int[] indices) {
-        float[] positions = new float[count * 3];
-        float[] normals = new float[count * 3];
-        int[] atoms = new int[count];
-        for (int i = 0; i < count; i++) {
-            int v = vertices[i];
-            System.arraycopy(mesh.positions(), v * 3, positions, i * 3, 3);
-            System.arraycopy(mesh.normals(), v * 3, normals, i * 3, 3);
-            atoms[i] = vertexAtoms[v];
-        }
-        return new TriangleMesh(positions, normals, atoms, indices);
-    }
-
-    static double area(SurfaceNets.Mesh mesh) {
-        float[] p = mesh.positions();
-        int[] t = mesh.triangles();
-        double area = 0;
-        for (int i = 0; i < t.length; i += 3) {
-            int a = t[i] * 3, b = t[i + 1] * 3, c = t[i + 2] * 3;
-            double ux = p[b] - p[a], uy = p[b + 1] - p[a + 1], uz = p[b + 2] - p[a + 2];
-            double vx = p[c] - p[a], vy = p[c + 1] - p[a + 1], vz = p[c + 2] - p[a + 2];
-            double cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
-            area += Math.sqrt(cx * cx + cy * cy + cz * cz) / 2;
-        }
-        return area;
     }
 
     private static void check(BooleanSupplier cancelled) {

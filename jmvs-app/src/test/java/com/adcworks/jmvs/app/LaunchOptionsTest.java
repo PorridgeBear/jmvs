@@ -1,6 +1,8 @@
 package com.adcworks.jmvs.app;
 
 import com.adcworks.jmvs.core.model.SecondaryStructureSource;
+import com.adcworks.jmvs.scene.density.ContourLevel;
+import com.adcworks.jmvs.scene.density.DensityStyle;
 import com.adcworks.jmvs.scene.surface.SurfaceKind;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +42,44 @@ class LaunchOptionsTest {
                 .isThrownBy(() -> LaunchOptions.parse(new String[]{"--surface-opacity", "1.5"}));
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> LaunchOptions.parse(new String[]{"--surface-opacity", "half"}));
+    }
+
+    @Test
+    void parsesDensityMapOptions() {
+        LaunchOptions options = LaunchOptions.parse(new String[]{"data/5me2.cif", "--map", "data/emd_3488.map.gz",
+                "--contour", "0.09", "--map-style", "surface", "--map-opacity", "0.7", "--screenshot", "out.png"});
+
+        assertThat(options.file()).contains(Path.of("data/5me2.cif"));
+        assertThat(options.map()).contains(Path.of("data/emd_3488.map.gz"));
+        assertThat(options.contour()).contains(new ContourLevel.Absolute(0.09f));
+        assertThat(options.mapStyle()).contains(DensityStyle.SURFACE);
+        assertThat(options.mapOpacity()).contains(0.7f);
+    }
+
+    @Test
+    void positionalMapFilesAreMapsAndAreEnoughForAScreenshot() {
+        LaunchOptions options = LaunchOptions.parse(new String[]{"emd_3488.map.gz", "5me2.cif", "--contour",
+                "3sigma"});
+        assertThat(options.map()).contains(Path.of("emd_3488.map.gz"));
+        assertThat(options.file()).contains(Path.of("5me2.cif"));
+        assertThat(options.contour()).contains(new ContourLevel.Sigma(3f));
+
+        LaunchOptions mapOnly = LaunchOptions.parse(new String[]{"x.mrc", "--screenshot", "out.png"});
+        assertThat(mapOnly.file()).isEmpty();
+        assertThat(mapOnly.map()).contains(Path.of("x.mrc"));
+    }
+
+    @Test
+    void rejectsInvalidDensityMapOptions() {
+        assertThatIllegalArgumentException().isThrownBy(() -> LaunchOptions.parse(new String[]{"--contour", "high"}))
+                .withMessageContaining("--contour");
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> LaunchOptions.parse(new String[]{"--map-style", "dots"}))
+                .withMessageContaining("surface or mesh");
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> LaunchOptions.parse(new String[]{"--map-opacity", "2"}));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> LaunchOptions.parse(new String[]{"--screenshot", "out.png"}));
     }
 
     @Test

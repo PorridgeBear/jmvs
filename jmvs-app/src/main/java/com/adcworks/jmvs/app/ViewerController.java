@@ -1,7 +1,10 @@
 package com.adcworks.jmvs.app;
 
 import com.adcworks.jmvs.core.chem.SecondaryStructures;
+import com.adcworks.jmvs.core.io.MapReadException;
+import com.adcworks.jmvs.core.io.MrcMapReader;
 import com.adcworks.jmvs.core.io.StructureReadException;
+import com.adcworks.jmvs.core.map.DensityMap;
 import com.adcworks.jmvs.core.io.StructureReaders;
 import com.adcworks.jmvs.core.model.Atom;
 import com.adcworks.jmvs.core.model.Chain;
@@ -12,6 +15,12 @@ import com.adcworks.jmvs.scene.Registry;
 import com.adcworks.jmvs.scene.Scene;
 import com.adcworks.jmvs.scene.colour.ColourScheme;
 import com.adcworks.jmvs.scene.colour.Legend;
+import com.adcworks.jmvs.scene.config.DensitySettings;
+import com.adcworks.jmvs.scene.density.ContourLevel;
+import com.adcworks.jmvs.scene.density.DensityStyle;
+import com.adcworks.jmvs.scene.density.Isosurface;
+import com.adcworks.jmvs.scene.density.IsosurfaceBuilder;
+import com.adcworks.jmvs.scene.density.ZoneColouring;
 import com.adcworks.jmvs.scene.mode.DisplayMode;
 import com.adcworks.jmvs.scene.surface.Surface;
 import com.adcworks.jmvs.scene.surface.SurfaceBuilder;
@@ -26,11 +35,12 @@ import java.util.OptionalInt;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 
 /**
- * Application state and use cases, independent of libGDX: the loaded structure, display mode, colour scheme and
- * selection. Loading runs on a background executor; all state changes and listener calls happen on the UI
- * executor.
+ * Application state and use cases, independent of libGDX: the loaded structure, display mode, colour scheme,
+ * selection, surface and density map. Loading and building run on a background executor; all state changes and
+ * listener calls happen on the UI executor.
  */
 public final class ViewerController {
 
@@ -60,6 +70,23 @@ public final class ViewerController {
         void surfaceChanged(Optional<Surface> surface);
 
         void surfaceOpacityChanged(float opacity);
+
+        /** A density map was read; its contour follows with {@link #densityChanged}. */
+        default void mapShown(DensityMap map) {
+        }
+
+        /**
+         * The density contour to draw changed: a new map, level or zone colouring, or empty when the map is closed.
+         * While a new level is computed the previous contour stays shown.
+         */
+        default void densityChanged(Optional<Isosurface> isosurface) {
+        }
+
+        default void densityStyleChanged(DensityStyle style) {
+        }
+
+        default void densityOpacityChanged(float opacity) {
+        }
     }
 
     private record Loaded(Structure read, Structure structure, Scene scene, int[] colours) {
@@ -93,6 +120,19 @@ public final class ViewerController {
     private Optional<SurfaceKind> surfaceKind = Optional.empty();
     private float surfaceOpacity = 1f;
     private boolean surfaceBuilding;
+    private final MrcMapReader mapReader;
+    private final DensitySettings densitySettings;
+    private DensityMap map;
+    private int mapGeneration;
+    private boolean mapLoading;
+    private float contourLevel;
+    /** The contour shown, for {@link #map} at {@link Isosurface#level()}, zone-coloured for {@link #structure}. */
+    private Isosurface density;
+    /** Incremented on every contour request; read by background builds to stop when superseded. */
+    private final AtomicInteger densityGeneration = new AtomicInteger();
+    private boolean densityBuilding;
+    private DensityStyle densityStyle;
+    private float densityOpacity = 1f;
 
     public ViewerController(StructureReaders readers, Registry registry, Executor background, Executor ui,
                             Listener listener) {
@@ -104,6 +144,9 @@ public final class ViewerController {
         this.mode = registry.defaultMode();
         this.preferredScheme = registry.defaultScheme();
         this.surfaceBuilder = new SurfaceBuilder(registry.surface());
+        this.densitySettings = registry.density();
+        this.mapReader = new MrcMapReader(densitySettings.maxVoxels());
+        this.densityStyle = densitySettings.style();
     }
 
     public Registry registry() {
@@ -159,6 +202,43 @@ public final class ViewerController {
         return readers.supports(fileName);
     }
 
+    /** Whether the file name is a density map ({@code .map}, {@code .mrc}, {@code .ccp4}, optionally gzipped). */
+    public static boolean isMapFile(String fileName) {
+        return MrcMapReader.supports(fileName);
+    }
+
+    /** The density map shown, if any; it stays when another structure is opened. */
+    public Optional<DensityMap> map() {
+        return Optional.ofNullable(map);
+    }
+
+    public boolean isMapLoading() {
+        return mapLoading;
+    }
+
+    /** The density map's contour level, in the map's units. */
+    public float contourLevel() {
+        return contourLevel;
+    }
+
+    /** The contour shown, if any. */
+    public Optional<Isosurface> density() {
+        return Optional.ofNullable(density);
+    }
+
+    /** Whether a contour is being computed in the background. */
+    public boolean isDensityBuilding() {
+        return densityBuilding;
+    }
+
+    public DensityStyle densityStyle() {
+        return densityStyle;
+    }
+
+    public float densityOpacity() {
+        return densityOpacity;
+    }
+
     /**
      * Loads a file in the background. On failure the current structure stays visible.
      */
@@ -186,6 +266,80 @@ public final class ViewerController {
                 ui.execute(() -> failed(generation, path.getFileName() + ": unexpected error: " + e));
             }
         });
+    }
+
+    /**
+     * Reads a density map in the background and contours it at the default level
+     * ({@code density.sigma} standard deviations above the mean). On failure the current map stays.
+     */
+    public void openMap(Path path) {
+        openMap(path, Optional.empty());
+    }
+
+    /**
+     * Reads a density map in the background and contours it at {@code level}, or the default level if empty.
+     */
+    public void openMap(Path path, Optional<ContourLevel> level) {
+        int generation = ++mapGeneration;
+        mapLoading = true;
+        listener.loadingStarted(path.getFileName().toString());
+        background.execute(() -> {
+            try {
+                DensityMap read = mapReader.read(path);
+                ui.execute(() -> mapRead(generation, read, level));
+            } catch (MapReadException e) {
+                LOG.log(System.Logger.Level.WARNING, "Cannot open map " + path, e);
+                ui.execute(() -> mapFailed(generation, e.getMessage()));
+            } catch (RuntimeException | OutOfMemoryError e) {
+                LOG.log(System.Logger.Level.ERROR, "Unexpected error opening map " + path, e);
+                ui.execute(() -> mapFailed(generation, path.getFileName() + ": unexpected error: " + e));
+            }
+        });
+    }
+
+    /** Removes the density map. */
+    public void closeMap() {
+        mapGeneration++;
+        mapLoading = false;
+        map = null;
+        density = null;
+        requestDensity();
+    }
+
+    /**
+     * Contours the map at another level, computed in the background; the previous contour stays shown meanwhile.
+     */
+    public void setContourLevel(float level) {
+        if (map == null || !Float.isFinite(level) || level == contourLevel) {
+            return;
+        }
+        contourLevel = level;
+        requestDensity();
+    }
+
+    /** Moves the contour level by {@code steps} tenths of a standard deviation. */
+    public void stepContourLevel(int steps) {
+        if (map != null) {
+            setContourLevel(contourLevel + steps * 0.1f * map.statistics().rms());
+        }
+    }
+
+    public void setDensityStyle(DensityStyle style) {
+        if (style != densityStyle) {
+            densityStyle = style;
+            listener.densityStyleChanged(style);
+        }
+    }
+
+    /**
+     * Density contour opacity from 0 to 1; values outside are clamped.
+     */
+    public void setDensityOpacity(float opacity) {
+        float clamped = Math.clamp(opacity, 0f, 1f);
+        if (clamped != densityOpacity) {
+            densityOpacity = clamped;
+            listener.densityOpacityChanged(clamped);
+        }
     }
 
     public void setMode(String id) {
@@ -372,6 +526,81 @@ public final class ViewerController {
         listener.loadFailed(message);
     }
 
+    private void mapRead(int generation, DensityMap read, Optional<ContourLevel> level) {
+        if (generation != mapGeneration) {
+            return;
+        }
+        mapLoading = false;
+        map = read;
+        density = null;
+        contourLevel = level.orElse(new ContourLevel.Sigma(densitySettings.defaultSigma()))
+                .resolve(read.statistics());
+        listener.mapShown(read);
+        requestDensity();
+    }
+
+    private void mapFailed(int generation, String message) {
+        if (generation != mapGeneration) {
+            return;
+        }
+        mapLoading = false;
+        listener.loadFailed(message);
+    }
+
+    /**
+     * Contours the map at the current level and zone-colours it for the current structure, in the background.
+     * When only the structure changed, the shown contour's geometry is reused and only its vertex atoms change.
+     */
+    private void requestDensity() {
+        int generation = densityGeneration.incrementAndGet();
+        if (map == null) {
+            densityBuilding = false;
+            listener.densityChanged(Optional.empty());
+            return;
+        }
+        densityBuilding = true;
+        DensityMap target = map;
+        float level = contourLevel;
+        Optional<Structure> model = structure();
+        Isosurface reuse = density != null && density.level() == level ? density : null;
+        float radius = densitySettings.zoneRadius();
+        background.execute(() -> {
+            try {
+                long start = System.nanoTime();
+                BooleanSupplier cancelled = () -> densityGeneration.get() != generation;
+                Isosurface contour = reuse != null ? reuse : IsosurfaceBuilder.build(target, level, cancelled);
+                Isosurface zoned = ZoneColouring.assign(contour, model, radius, cancelled);
+                LOG.log(System.Logger.Level.INFO, String.format(Locale.ROOT,
+                        "Contoured %s at %.4g (%.2f σ): %d triangles, %.0f Å³ in %d ms", target.name(), level,
+                        target.statistics().sigma(level), zoned.triangleCount(), zoned.volume(),
+                        (System.nanoTime() - start) / 1_000_000));
+                ui.execute(() -> densityBuilt(generation, target, zoned));
+            } catch (CancellationException e) {
+                LOG.log(System.Logger.Level.DEBUG, "Contour superseded");
+            } catch (RuntimeException e) {
+                LOG.log(System.Logger.Level.ERROR, "Cannot contour " + target.name(), e);
+                ui.execute(() -> densityFailed(generation, "Cannot contour map: " + e));
+            }
+        });
+    }
+
+    private void densityBuilt(int generation, DensityMap builtFor, Isosurface contour) {
+        if (generation != densityGeneration.get() || builtFor != map) {
+            return;
+        }
+        density = contour;
+        densityBuilding = false;
+        listener.densityChanged(Optional.of(contour));
+    }
+
+    private void densityFailed(int generation, String message) {
+        if (generation != densityGeneration.get()) {
+            return;
+        }
+        densityBuilding = false;
+        listener.loadFailed(message);
+    }
+
     private void shown(int generation, Loaded loaded, DisplayMode builtFor, ColourScheme colouredWith,
                        SecondaryStructureSource appliedSource) {
         if (generation != loadGeneration) {
@@ -385,12 +614,21 @@ public final class ViewerController {
         scenes.put(builtFor.id(), loaded.scene());
         surfaces.clear();
         selection = OptionalInt.empty();
+        if (density != null) {
+            // The contour's atoms belong to the previous structure: show the map colour until re-zoned.
+            density = ZoneColouring.assign(density, Optional.empty(), 0, () -> false);
+            listener.densityChanged(Optional.of(density));
+        }
         // Mode or scheme may have changed while loading.
         Scene scene = builtFor == mode ? loaded.scene() : scene();
         int[] colours = colouredWith == scheme() ? loaded.colours() : scheme().colours(structure);
         listener.structureShown(scene, colours);
         listener.selectionChanged(selection);
         requestSurface();
+        // Zone colouring follows the new structure's atoms; the contour geometry is reused.
+        if (map != null) {
+            requestDensity();
+        }
         // The source may have changed while loading.
         if (shownSource != secondaryStructureSource) {
             requestSecondaryStructure();

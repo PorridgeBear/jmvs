@@ -39,9 +39,10 @@ Visual and performance checks (render once to a PNG, or rotate and log the frame
 jmvs-app/build/install/jmvs/bin/jmvs data/1usc.cif --mode ribbons --scheme structure --screenshot /tmp/1usc.png
 jmvs-app/build/install/jmvs/bin/jmvs data/1zpd.cif --mode balls --benchmark 5
 jmvs-app/build/install/jmvs/bin/jmvs data/4hhb.cif --mode ribbons --scheme chain --surface ses --surface-opacity 0.5 --screenshot /tmp/4hhb.png
+jmvs-app/build/install/jmvs/bin/jmvs data/5me2.cif data/emd_3488.map.gz --mode sticks --scheme chain --contour 0.09 --map-style mesh --screenshot /tmp/5me2.png
 ```
 
-Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`, `cartoon`. Scheme ids: `cpk`, `chain`, `group`, `structure`, `bfactor`, `confidence`. Surface ids: `ses`, `sas`. Secondary structure sources (`--ss`): `auto`, `file`, `computed`.
+Mode ids: `balls`, `sticks`, `ballsandsticks`, `ribbons`, `cartoon`. Scheme ids: `cpk`, `chain`, `group`, `structure`, `bfactor`, `confidence`. Surface ids: `ses`, `sas`. Secondary structure sources (`--ss`): `auto`, `file`, `computed`. Density map styles (`--map-style`): `surface`, `mesh`; `--contour` takes a level or `<n>sigma`.
 
 ## Architecture rules
 

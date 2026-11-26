@@ -28,3 +28,4 @@ Legacy risks and debts are listed in [legacy §11](legacy/11-risks-and-technical
 | A5 | Installers bundle LWJGL natives for every platform (~10 MB) | Simpler build; could be filtered per OS |
 | A6 | Ribbons are flat strips without arrowheads or tubes | Parity with the legacy ribbons; the Cartoon mode has arrowheads, thickness and tubes ([ADR 0019](../adr/0019-cartoon-representation.md)) |
 | A7 | Surfaces cover the whole first model, not selections; grid surfaces round SAS creases (a few % less area) and coarsen above 8M voxels | Selections come in slice 9; accuracy is enough for viewing ([ADR 0017](../adr/0017-molecular-surfaces.md)) |
+| A8 | Density maps are read whole into memory, binned above 32M voxels; only MRC/CCP4 local files; zone colouring uses the first model | Typical EM maps fit; EMDB fetch comes with slice 2 ([ADR 0020](../adr/0020-density-maps.md)) |

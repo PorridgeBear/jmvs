@@ -5,6 +5,8 @@ import com.adcworks.jmvs.scene.Scene;
 import com.adcworks.jmvs.scene.SphereInstances;
 import com.adcworks.jmvs.scene.TriangleMesh;
 import com.adcworks.jmvs.scene.colour.Rgb;
+import com.adcworks.jmvs.scene.density.DensityStyle;
+import com.adcworks.jmvs.scene.density.Isosurface;
 import com.adcworks.jmvs.scene.surface.Surface;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
@@ -22,8 +24,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Draws a {@link Scene} with instanced spheres and cylinders and plain triangle meshes, and an optional {@link Surface}
- * over it, opaque or transparent. Geometry is uploaded once per scene or surface; {@link #setColours(int[])} and
+ * Draws a {@link Scene} with instanced spheres and cylinders and plain triangle meshes, and optionally a
+ * {@link Surface} and a density map {@link Isosurface} over it, each opaque or transparent; the isosurface as a
+ * surface or as lines. Geometry is uploaded once per scene, surface or isosurface; {@link #setColours(int[])} and
  * {@link #setHighlight(int)} only rewrite colour data. Must be used on the render thread.
  */
 public final class StructureRenderer implements Disposable {
@@ -54,6 +57,13 @@ public final class StructureRenderer implements Disposable {
     private final List<int[]> surfaceAtoms = new ArrayList<>();
     private final List<Mesh> surfaceMeshes = new ArrayList<>();
     private float surfaceOpacity = 1f;
+    private Isosurface density;
+    private DensityStyle densityStyle = DensityStyle.MESH;
+    private int densityColour = 0xA0A0A0;
+    private final List<float[]> densityData = new ArrayList<>();
+    private final List<int[]> densityAtoms = new ArrayList<>();
+    private final List<Mesh> densityMeshes = new ArrayList<>();
+    private float densityOpacity = 1f;
     private int[] atomColours = new int[0];
     private int highlightedAtom = -1;
 
@@ -105,7 +115,7 @@ public final class StructureRenderer implements Disposable {
 
         for (TriangleMesh source : scene.meshes()) {
             if (source.vertexCount() <= MAX_INDEXED_VERTICES) {
-                addIndexedMesh(source, meshData, meshAtoms, meshes);
+                addIndexedMesh(source, source.indices(), meshData, meshAtoms, meshes);
                 continue;
             }
             // Expanded to non-indexed triangles: libGDX index buffers are 16-bit.
@@ -133,23 +143,67 @@ public final class StructureRenderer implements Disposable {
         disposeSurface();
         // Surface guarantees at most 65,535 vertices per mesh, within libGDX's 16-bit indices.
         surface.ifPresent(s -> s.meshes().forEach(source ->
-                addIndexedMesh(source, surfaceData, surfaceAtoms, surfaceMeshes)));
+                addIndexedMesh(source, source.indices(), surfaceData, surfaceAtoms, surfaceMeshes)));
         uploadSurfaceColours();
     }
 
     /**
-     * Uploads a mesh of at most {@link #MAX_INDEXED_VERTICES} vertices with 16-bit indices; colours are filled in
-     * later from {@code atoms}.
+     * Uploads a density map contour to draw over the scene, or removes it. Can be shown without a scene.
      */
-    private static void addIndexedMesh(TriangleMesh source, List<float[]> dataOut, List<int[]> atomsOut,
-                                       List<Mesh> meshesOut) {
+    public void setDensity(Optional<Isosurface> isosurface) {
+        density = isosurface.orElse(null);
+        uploadDensity();
+    }
+
+    /**
+     * Draws the density contour as a surface or as lines; re-uploads its indices, not a rebuild.
+     */
+    public void setDensityStyle(DensityStyle style) {
+        if (style != densityStyle) {
+            densityStyle = style;
+            uploadDensity();
+        }
+    }
+
+    /**
+     * Density contour opacity from 0 (invisible) to 1 (opaque).
+     */
+    public void setDensityOpacity(float opacity) {
+        densityOpacity = Math.clamp(opacity, 0f, 1f);
+    }
+
+    /**
+     * Colour of density contour vertices without a nearby atom, packed {@code 0xRRGGBB}.
+     */
+    public void setDensityColour(int rgb) {
+        densityColour = rgb;
+        uploadDensityColours();
+    }
+
+    private void uploadDensity() {
+        disposeDensity();
+        if (density != null) {
+            for (int m = 0; m < density.meshes().size(); m++) {
+                TriangleMesh source = density.meshes().get(m);
+                int[] indices = densityStyle == DensityStyle.MESH ? density.lines().get(m) : source.indices();
+                addIndexedMesh(source, indices, densityData, densityAtoms, densityMeshes);
+            }
+        }
+        uploadDensityColours();
+    }
+
+    /**
+     * Uploads a mesh of at most {@link #MAX_INDEXED_VERTICES} vertices with 16-bit indices (triangles or lines);
+     * colours are filled in later from {@code atoms}.
+     */
+    private static void addIndexedMesh(TriangleMesh source, int[] indices, List<float[]> dataOut,
+                                       List<int[]> atomsOut, List<Mesh> meshesOut) {
         int count = source.vertexCount();
         float[] data = new float[count * MESH_FLOATS];
         for (int v = 0; v < count; v++) {
             System.arraycopy(source.positions(), v * 3, data, v * MESH_FLOATS, 3);
             System.arraycopy(source.normals(), v * 3, data, v * MESH_FLOATS + 3, 3);
         }
-        int[] indices = source.indices();
         short[] shortIndices = new short[indices.length];
         for (int i = 0; i < indices.length; i++) {
             shortIndices[i] = (short) indices[i];
@@ -188,7 +242,7 @@ public final class StructureRenderer implements Disposable {
     }
 
     public void render(Camera camera) {
-        if (scene == null) {
+        if (scene == null && density == null) {
             return;
         }
         // Light from the viewer's upper left.
@@ -199,42 +253,47 @@ public final class StructureRenderer implements Disposable {
         Gdx.gl.glDisable(GL20.GL_CULL_FACE);
         Gdx.gl.glDisable(GL20.GL_BLEND);
 
-        if (scene.spheres().count() > 0) {
-            draw(sphereShader, sphereTemplate, camera);
+        if (scene != null) {
+            if (scene.spheres().count() > 0) {
+                draw(sphereShader, sphereTemplate, camera);
+            }
+            if (scene.cylinders().count() > 0) {
+                draw(cylinderShader, cylinder, camera);
+            }
+            for (Mesh mesh : meshes) {
+                draw(meshShader, mesh, camera, 1f);
+            }
+            renderOverlay(surfaceMeshes, surfaceOpacity, GL20.GL_TRIANGLES, camera);
         }
-        if (scene.cylinders().count() > 0) {
-            draw(cylinderShader, cylinder, camera);
-        }
-        for (Mesh mesh : meshes) {
-            draw(meshShader, mesh, camera, 1f);
-        }
-        renderSurface(camera);
+        renderOverlay(densityMeshes, densityOpacity,
+                densityStyle == DensityStyle.MESH ? GL20.GL_LINES : GL20.GL_TRIANGLES, camera);
         Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
     }
 
     /**
-     * Opaque surfaces draw normally. Transparent ones first write depth only, then blend only their nearest layer,
-     * so overlapping folds don't need sorting; blending keeps the framebuffer's alpha for screenshots.
+     * Opaque overlays (surfaces, density contours) draw normally. Transparent ones first write depth only, then
+     * blend only their nearest layer, so overlapping folds don't need sorting; blending keeps the framebuffer's
+     * alpha for screenshots.
      */
-    private void renderSurface(Camera camera) {
-        if (surfaceMeshes.isEmpty() || surfaceOpacity <= 0f) {
+    private void renderOverlay(List<Mesh> overlay, float opacity, int primitive, Camera camera) {
+        if (overlay.isEmpty() || opacity <= 0f) {
             return;
         }
-        if (surfaceOpacity >= 1f) {
-            for (Mesh mesh : surfaceMeshes) {
-                draw(meshShader, mesh, camera, 1f);
+        if (opacity >= 1f) {
+            for (Mesh mesh : overlay) {
+                draw(meshShader, mesh, camera, 1f, primitive);
             }
             return;
         }
         Gdx.gl.glColorMask(false, false, false, false);
-        for (Mesh mesh : surfaceMeshes) {
-            draw(meshShader, mesh, camera, surfaceOpacity);
+        for (Mesh mesh : overlay) {
+            draw(meshShader, mesh, camera, opacity, primitive);
         }
         Gdx.gl.glColorMask(true, true, true, true);
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFuncSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ZERO, GL20.GL_ONE);
-        for (Mesh mesh : surfaceMeshes) {
-            draw(meshShader, mesh, camera, surfaceOpacity);
+        for (Mesh mesh : overlay) {
+            draw(meshShader, mesh, camera, opacity, primitive);
         }
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
@@ -244,28 +303,33 @@ public final class StructureRenderer implements Disposable {
     }
 
     private void draw(ShaderProgram shader, Mesh mesh, Camera camera, float opacity) {
+        draw(shader, mesh, camera, opacity, GL20.GL_TRIANGLES);
+    }
+
+    private void draw(ShaderProgram shader, Mesh mesh, Camera camera, float opacity, int primitive) {
         shader.bind();
         shader.setUniformMatrix("u_projView", camera.combined);
         shader.setUniformf("u_cameraPos", camera.position);
         shader.setUniformf("u_lightDir", lightDir);
         shader.setUniformf("u_opacity", opacity);
-        mesh.render(shader, GL20.GL_TRIANGLES);
+        mesh.render(shader, primitive);
     }
 
     private void uploadColours() {
+        uploadDensityColours();
         if (scene == null) {
             return;
         }
         SphereInstances spheres = scene.spheres();
         for (int i = 0; i < spheres.count(); i++) {
-            putColour(sphereData, i * SPHERE_FLOATS + 4, spheres.atoms()[i]);
+            putColour(sphereData, i * SPHERE_FLOATS + 4, spheres.atoms()[i], 0xFFFFFF);
         }
         if (spheres.count() > 0) {
             sphereTemplate.setInstanceData(sphereData);
         }
         CylinderInstances cylinders = scene.cylinders();
         for (int i = 0; i < cylinders.count(); i++) {
-            putColour(cylinderData, i * CYLINDER_FLOATS + 7, cylinders.atoms()[i]);
+            putColour(cylinderData, i * CYLINDER_FLOATS + 7, cylinders.atoms()[i], 0xFFFFFF);
         }
         if (cylinders.count() > 0) {
             cylinder.setInstanceData(cylinderData);
@@ -274,11 +338,22 @@ public final class StructureRenderer implements Disposable {
             float[] data = meshData.get(m);
             int[] atoms = meshAtoms.get(m);
             for (int v = 0; v < atoms.length; v++) {
-                putColour(data, v * MESH_FLOATS + 6, atoms[v]);
+                putColour(data, v * MESH_FLOATS + 6, atoms[v], 0xFFFFFF);
             }
             meshes.get(m).setVertices(data);
         }
         uploadSurfaceColours();
+    }
+
+    private void uploadDensityColours() {
+        for (int m = 0; m < densityMeshes.size(); m++) {
+            float[] data = densityData.get(m);
+            int[] atoms = densityAtoms.get(m);
+            for (int v = 0; v < atoms.length; v++) {
+                putColour(data, v * MESH_FLOATS + 6, atoms[v], densityColour);
+            }
+            densityMeshes.get(m).setVertices(data);
+        }
     }
 
     private void uploadSurfaceColours() {
@@ -286,18 +361,22 @@ public final class StructureRenderer implements Disposable {
             float[] data = surfaceData.get(m);
             int[] atoms = surfaceAtoms.get(m);
             for (int v = 0; v < atoms.length; v++) {
-                putColour(data, v * MESH_FLOATS + 6, atoms[v]);
+                putColour(data, v * MESH_FLOATS + 6, atoms[v], 0xFFFFFF);
             }
             surfaceMeshes.get(m).setVertices(data);
         }
     }
 
-    private void putColour(float[] data, int offset, int atom) {
-        int rgb = atom < atomColours.length ? atomColours[atom] : 0xFFFFFF;
+    /**
+     * Writes the atom's colour, or {@code fallback} for an atom index outside the colours (such as
+     * {@link Isosurface#NO_ATOM}).
+     */
+    private void putColour(float[] data, int offset, int atom, int fallback) {
+        int rgb = atom >= 0 && atom < atomColours.length ? atomColours[atom] : fallback;
         data[offset] = Rgb.red(rgb);
         data[offset + 1] = Rgb.green(rgb);
         data[offset + 2] = Rgb.blue(rgb);
-        data[offset + 3] = atom == highlightedAtom ? 2f : 1f;
+        data[offset + 3] = atom >= 0 && atom == highlightedAtom ? 2f : 1f;
     }
 
     private void disableInstancing() {
@@ -313,6 +392,13 @@ public final class StructureRenderer implements Disposable {
         meshes.clear();
         meshData.clear();
         meshAtoms.clear();
+    }
+
+    private void disposeDensity() {
+        densityMeshes.forEach(Mesh::dispose);
+        densityMeshes.clear();
+        densityData.clear();
+        densityAtoms.clear();
     }
 
     private void disposeSurface() {
@@ -337,6 +423,7 @@ public final class StructureRenderer implements Disposable {
         disableInstancing();
         disposeMeshes();
         disposeSurface();
+        disposeDensity();
         detailedSphere.dispose();
         coarseSphere.dispose();
         cylinder.dispose();

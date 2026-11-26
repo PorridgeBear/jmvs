@@ -36,6 +36,7 @@ class SampleFilesGoldenTest {
             "AF-P69905-F1-model_v6.cif, 1, 1, 142, 1077, 1105, 111, 0, 0, -19.915, 20.000",
             "1bna.cif,     1,      4,      104,      566,   546,   0,     0,     80,        2.622,   31.084",
             "AF-P69905-F1-model_v6-noss.cif, 1, 1, 142, 1077, 1105, 0, 0, 0, -19.915, 20.000",
+            "5me2.cif,     1,      8,      570,      4468,  4592,  474,   0,     172,       18.576,  78.834",
     })
     void sampleMatchesGoldenValues(String file, int models, int chains, int residues, int atoms, int bonds,
                                    int helix, int sheet, long heterogen, float minX, float maxZ) throws Exception {

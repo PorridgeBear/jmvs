@@ -31,7 +31,7 @@ the *Status* line at the end of its section in the same pull request as the work
 | 11 | Molecular surfaces | Visualisation | High | L | — | ✅ Done ([#4](https://github.com/PorridgeBear/jmvs/pull/4)) |
 | 12 | Publication-quality rendering | Output | Medium | M | 3 | ⏳ Planned |
 | 13 | Sessions and scripting | Reproducibility | Medium | L | 9 | ⏳ Planned |
-| 14 | Density maps | Cryo-EM | Medium | L | 11 | ⏳ Planned |
+| 14 | Density maps | Cryo-EM | Medium | L | 11 | ✅ Done |
 | — | Watch items: Metal rendering on macOS; very large structures | Platform | Medium | L | — | Watching |
 
 ```mermaid
@@ -51,7 +51,7 @@ flowchart LR
 
     classDef done fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20
     classDef inProgress fill:#fff3c4,stroke:#f9a825,color:#5d4000
-    class S0,S1,S5,S6,S11 done
+    class S0,S1,S5,S6,S11,S14 done
 ```
 
 ## Slices
@@ -90,6 +90,8 @@ Open structures without downloading files by hand.
 
 - *File > Open ID…*: accepts a PDB ID (e.g. `4hhb`, and extended `pdb_0000xxxx` IDs) or an AlphaFold DB ID
   (e.g. `AF-P69905-F1`).
+- EMDB IDs (e.g. `EMD-3488`): download the map and contour it at the entry's recommended level (moved here from
+  slice 14, which reads local map files).
 - Download BinaryCIF from RCSB (fall back to mmCIF) and mmCIF from AlphaFold DB over HTTPS, in the background, with
   progress and errors in the UI; cache downloads locally.
 - Accept an ID on the command line too.
@@ -237,12 +239,14 @@ A common task: look at what a ligand touches.
 
 ### 14. Density maps
 
-- Read MRC/CCP4 maps (and fetch EM maps by EMDB ID).
-- Isosurface at an adjustable contour level, overlaid on the model; mesh or surface.
+- Read MRC/CCP4 maps; fetching EM maps by EMDB ID moved to slice 2, which designs downloading once.
+- Isosurface at an adjustable contour level, overlaid on the model; mesh or surface, coloured by the nearest model
+  atom ([ADR 0020](adr/0020-density-maps.md)).
 
 **Done when** an EM map and its fitted model display together with an adjustable contour.
 
-**Status: planned.**
+**Status: done**: haemoglobin EMD-3488 with its model `5me2` (in `data/`); the contour follows a slider, about 50 ms
+per level.
 
 ## Watch items
 

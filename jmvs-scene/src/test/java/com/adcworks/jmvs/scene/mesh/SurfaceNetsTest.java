@@ -1,4 +1,4 @@
-package com.adcworks.jmvs.scene.surface;
+package com.adcworks.jmvs.scene.mesh;
 
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +67,7 @@ class SurfaceNetsTest {
 
     @Test
     void areaApproachesTheSphere() {
-        assertThat(SurfaceBuilder.area(sphere())).isCloseTo(4 * Math.PI * RADIUS * RADIUS, within(0.03 * 4 * Math.PI
+        assertThat(MeshChunks.area(sphere())).isCloseTo(4 * Math.PI * RADIUS * RADIUS, within(0.03 * 4 * Math.PI
                 * RADIUS * RADIUS));
     }
 
