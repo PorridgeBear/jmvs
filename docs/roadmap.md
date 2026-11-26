@@ -18,7 +18,7 @@ the *Status* line at the end of its section in the same pull request as the work
 | # | Slice | Theme | Value | Effort | Depends on | Status |
 |---|---|---|---|---|---|---|
 | 0 | Finish the modernisation | Foundation | High | M | — | ✅ Done ([#2](https://github.com/PorridgeBear/jmvs/pull/2), `v2.0.0`) |
-| 1 | AlphaFold-ready colouring | Predicted models | High | S | 0 | 🚧 In progress (`slice-1-alphafold-colouring`) |
+| 1 | AlphaFold-ready colouring | Predicted models | High | S | 0 | ✅ Done ([#3](https://github.com/PorridgeBear/jmvs/pull/3)) |
 | 2 | Open by ID | Getting data | High | S | 0 | ⏳ Planned |
 | 3 | Models and image export | Everyday use | Medium | S | 0 | ⏳ Planned |
 | 4 | Legacy PDB files | Getting data | Medium | S | 0 | ⏳ Planned |
@@ -51,8 +51,7 @@ flowchart LR
 
     classDef done fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20
     classDef inProgress fill:#fff3c4,stroke:#f9a825,color:#5d4000
-    class S0 done
-    class S1 inProgress
+    class S0,S1 done
 ```
 
 ## Slices
@@ -83,7 +82,7 @@ Make predicted models useful: colour by model confidence.
 
 **Done when** an AlphaFold model opens coloured by pLDDT, matching the AlphaFold DB website's bands.
 
-**Status: in progress** (branch `slice-1-alphafold-colouring`).
+**Status: done** ([#3](https://github.com/PorridgeBear/jmvs/pull/3)). B-factor and Confidence (pLDDT) colour schemes with legends, the picked atom's value in the status bar, and an AlphaFold DB sample (`AF-P69905-F1`) with golden values ([ADR 0016](adr/0016-bfactor-confidence-colouring-and-legends.md)). Not yet released.
 
 ### 2. Open by ID
 
