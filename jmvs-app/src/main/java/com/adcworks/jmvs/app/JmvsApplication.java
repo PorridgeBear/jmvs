@@ -9,6 +9,7 @@ import com.adcworks.jmvs.render.ScreenPicker;
 import com.adcworks.jmvs.render.StructureRenderer;
 import com.adcworks.jmvs.scene.Registry;
 import com.adcworks.jmvs.scene.Scene;
+import com.adcworks.jmvs.scene.surface.Surface;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -22,6 +23,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.kotcrab.vis.ui.VisUI;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,9 +69,12 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
         Registry registry = Registry.load();
         controller = new ViewerController(StructureReaders.defaults(ElementTable.load()), registry, background,
                 Gdx.app::postRunnable, this);
+        ui = new ViewerUi(stage, controller, this);
         options.mode().ifPresent(controller::setMode);
         options.scheme().ifPresent(controller::setScheme);
-        ui = new ViewerUi(stage, controller, this);
+        options.surface().ifPresent(kind -> controller.setSurface(Optional.of(kind)));
+        options.surfaceOpacity().ifPresent(controller::setSurfaceOpacity);
+        ui.refresh();
 
         Gdx.input.setInputProcessor(new InputMultiplexer(stage, shortcuts(), orbit));
         options.file().ifPresent(this::open);
@@ -95,15 +100,20 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
             ui.setFps(Gdx.graphics.getFramesPerSecond());
         }
 
-        if (options.screenshot().isPresent() && framesSinceShown >= 0 && ++framesSinceShown == 3) {
+        if (options.screenshot().isPresent() && ready() && ++framesSinceShown == 3) {
             writeScreenshot(options.screenshot().get());
             Gdx.app.exit();
         }
         options.benchmarkSeconds().ifPresent(this::benchmarkFrame);
     }
 
+    /** A structure is shown and its surface, if one is chosen, is computed. */
+    private boolean ready() {
+        return framesSinceShown >= 0 && !controller.isSurfaceBuilding();
+    }
+
     private void benchmarkFrame(int seconds) {
-        if (framesSinceShown < 0) {
+        if (!ready()) {
             return;
         }
         orbit.rotate(0.5f, 0.2f);
@@ -115,9 +125,10 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
         if (elapsed >= seconds) {
             double fps = (benchmarkFrames - 1) / elapsed;
             LOG.log(System.Logger.Level.INFO, String.format(java.util.Locale.ROOT,
-                    "Benchmark %s, %s/%s: %.1f fps average over %.1f s (%dx%d)",
+                    "Benchmark %s, %s/%s%s: %.1f fps average over %.1f s (%dx%d)",
                     controller.structure().map(s -> s.name() + " " + s.atoms().size() + " atoms").orElse("?"),
-                    controller.mode().id(), controller.scheme().id(), fps, elapsed,
+                    controller.mode().id(), controller.scheme().id(),
+                    controller.surfaceKind().map(k -> " + " + k.id() + " surface").orElse(""), fps, elapsed,
                     Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight()));
             Gdx.app.exit();
         }
@@ -167,6 +178,18 @@ public final class JmvsApplication extends ApplicationAdapter implements ViewerC
     @Override
     public void selectionChanged(OptionalInt atom) {
         renderer.setHighlight(atom.orElse(-1));
+        ui.refresh();
+    }
+
+    @Override
+    public void surfaceChanged(Optional<Surface> surface) {
+        renderer.setSurface(surface);
+        ui.refresh();
+    }
+
+    @Override
+    public void surfaceOpacityChanged(float opacity) {
+        renderer.setSurfaceOpacity(opacity);
         ui.refresh();
     }
 

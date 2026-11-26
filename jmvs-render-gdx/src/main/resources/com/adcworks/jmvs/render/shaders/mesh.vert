@@ -1,4 +1,4 @@
-// Plain lit mesh (ribbons) with per-vertex colour.
+// Plain lit mesh (ribbons, surfaces) with per-vertex colour.
 attribute vec3 a_position;
 attribute vec3 a_normal;
 attribute vec4 a_color;

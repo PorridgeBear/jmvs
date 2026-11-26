@@ -5,6 +5,7 @@ import com.adcworks.jmvs.scene.colour.ColourScheme;
 import com.adcworks.jmvs.scene.colour.Legend;
 import com.adcworks.jmvs.scene.colour.Rgb;
 import com.adcworks.jmvs.scene.mode.DisplayMode;
+import com.adcworks.jmvs.scene.surface.SurfaceKind;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -26,10 +27,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
- * Scene2D overlay: menu bar (File, Display, Colour, View, Help), a colour legend for schemes that have one, and a
- * status bar.
+ * Scene2D overlay: menu bar (File, Display, Colour, Surface, View, Help), a colour legend for schemes that have one,
+ * and a status bar.
  */
 public final class ViewerUi {
 
@@ -48,11 +50,15 @@ public final class ViewerUi {
     private static final String OTHER = "   ";
     private static final String HINT = "Open a structure with File > Open or drop a file on the window";
     private static final int GRADIENT_STEPS = 32;
+    private static final Map<String, Float> OPACITIES = Map.of("Opaque", 1f, "70%", 0.7f, "40%", 0.4f);
+    private static final List<String> OPACITY_ORDER = List.of("Opaque", "70%", "40%");
 
     private final Stage stage;
     private final ViewerController controller;
     private final Map<String, MenuItem> modeItems = new HashMap<>();
     private final Map<String, MenuItem> schemeItems = new HashMap<>();
+    private final Map<Optional<SurfaceKind>, MenuItem> surfaceItems = new HashMap<>();
+    private final Map<String, MenuItem> opacityItems = new HashMap<>();
     private final VisLabel status = new VisLabel(HINT);
     private final VisLabel selection = new VisLabel("");
     private final VisLabel fps = new VisLabel("");
@@ -91,6 +97,22 @@ public final class ViewerUi {
             colour.addItem(item);
         }
         menuBar.addMenu(colour);
+
+        Menu surface = new Menu("Surface");
+        addSurfaceItem(surface, Optional.empty());
+        for (SurfaceKind kind : SurfaceKind.values()) {
+            addSurfaceItem(surface, Optional.of(kind));
+        }
+        surface.addSeparator();
+        for (String label : OPACITY_ORDER) {
+            MenuItem item = item(label, () -> {
+                controller.setSurfaceOpacity(OPACITIES.get(label));
+                refresh();
+            });
+            opacityItems.put(label, item);
+            surface.addItem(item);
+        }
+        menuBar.addMenu(surface);
 
         Menu view = new Menu("View");
         view.addItem(item("Reset view", actions::resetView).setShortcut("R"));
@@ -131,6 +153,19 @@ public final class ViewerUi {
         refresh();
     }
 
+    private void addSurfaceItem(Menu menu, Optional<SurfaceKind> kind) {
+        MenuItem item = item(surfaceName(kind), () -> {
+            controller.setSurface(kind);
+            refresh();
+        });
+        surfaceItems.put(kind, item);
+        menu.addItem(item);
+    }
+
+    private static String surfaceName(Optional<SurfaceKind> kind) {
+        return kind.map(SurfaceKind::displayName).orElse("None");
+    }
+
     public void loading(String fileName) {
         loadingName = fileName;
         refresh();
@@ -162,10 +197,21 @@ public final class ViewerUi {
             item.setText((s.id().equals(scheme.id()) ? CURRENT : OTHER) + s.displayName());
             item.setDisabled(!controller.mode().supports(s));
         });
+        surfaceItems.forEach((kind, item) ->
+                item.setText((kind.equals(controller.surfaceKind()) ? CURRENT : OTHER) + surfaceName(kind)));
+        OPACITY_ORDER.forEach(label -> {
+            MenuItem item = opacityItems.get(label);
+            item.setText((OPACITIES.get(label) == controller.surfaceOpacity() ? CURRENT : OTHER) + label);
+            item.setDisabled(controller.surfaceKind().isEmpty());
+        });
 
         String text = controller.structure().map(s -> "%s  |  %d atoms, %d chains  |  %s, %s".formatted(
                 s.name(), s.atoms().size(), s.distinctChainIds(), controller.mode().displayName(),
                 scheme.displayName())).orElse(HINT);
+        if (controller.structure().isPresent() && controller.surfaceKind().isPresent()) {
+            text += controller.isSurfaceBuilding() ? "  |  Computing surface..."
+                    : "  |  " + controller.surfaceKind().get().displayName() + " surface";
+        }
         if (loadingName != null) {
             text = "Loading " + loadingName + "...";
         }

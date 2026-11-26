@@ -5,6 +5,7 @@ import com.adcworks.jmvs.scene.Scene;
 import com.adcworks.jmvs.scene.SphereInstances;
 import com.adcworks.jmvs.scene.TriangleMesh;
 import com.adcworks.jmvs.scene.colour.Rgb;
+import com.adcworks.jmvs.scene.surface.Surface;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
@@ -18,11 +19,12 @@ import com.badlogic.gdx.utils.GdxRuntimeException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
- * Draws a {@link Scene} with instanced spheres and cylinders and plain triangle meshes. Geometry is uploaded once
- * per scene; {@link #setColours(int[])} and {@link #setHighlight(int)} only rewrite colour data.
- * Must be used on the render thread.
+ * Draws a {@link Scene} with instanced spheres and cylinders and plain triangle meshes, and an optional {@link Surface}
+ * over it, opaque or transparent. Geometry is uploaded once per scene or surface; {@link #setColours(int[])} and
+ * {@link #setHighlight(int)} only rewrite colour data. Must be used on the render thread.
  */
 public final class StructureRenderer implements Disposable {
 
@@ -46,6 +48,10 @@ public final class StructureRenderer implements Disposable {
     private final List<float[]> meshData = new ArrayList<>();
     private final List<int[]> meshAtoms = new ArrayList<>();
     private final List<Mesh> meshes = new ArrayList<>();
+    private final List<float[]> surfaceData = new ArrayList<>();
+    private final List<int[]> surfaceAtoms = new ArrayList<>();
+    private final List<Mesh> surfaceMeshes = new ArrayList<>();
+    private float surfaceOpacity = 1f;
     private int[] atomColours = new int[0];
     private int highlightedAtom = -1;
 
@@ -115,7 +121,44 @@ public final class StructureRenderer implements Disposable {
     }
 
     /**
-     * Recolours the current scene without rebuilding geometry.
+     * Uploads a surface to draw over the scene, or removes it.
+     */
+    public void setSurface(Optional<Surface> surface) {
+        disposeSurface();
+        surface.ifPresent(s -> {
+            for (TriangleMesh source : s.meshes()) {
+                // Indexed: Surface guarantees at most 65,535 vertices per mesh, within libGDX's 16-bit indices.
+                int count = source.vertexCount();
+                float[] data = new float[count * MESH_FLOATS];
+                for (int v = 0; v < count; v++) {
+                    System.arraycopy(source.positions(), v * 3, data, v * MESH_FLOATS, 3);
+                    System.arraycopy(source.normals(), v * 3, data, v * MESH_FLOATS + 3, 3);
+                }
+                int[] indices = source.indices();
+                short[] shortIndices = new short[indices.length];
+                for (int i = 0; i < indices.length; i++) {
+                    shortIndices[i] = (short) indices[i];
+                }
+                Mesh mesh = new Mesh(true, count, indices.length, new VertexAttributes(VertexAttribute.Position(),
+                        VertexAttribute.Normal(), new VertexAttribute(VertexAttributes.Usage.Generic, 4, "a_color")));
+                mesh.setIndices(shortIndices);
+                surfaceData.add(data);
+                surfaceAtoms.add(source.atoms());
+                surfaceMeshes.add(mesh);
+            }
+        });
+        uploadSurfaceColours();
+    }
+
+    /**
+     * Surface opacity from 0 (invisible) to 1 (opaque).
+     */
+    public void setSurfaceOpacity(float opacity) {
+        surfaceOpacity = Math.clamp(opacity, 0f, 1f);
+    }
+
+    /**
+     * Recolours the current scene and surface without rebuilding geometry.
      */
     public void setColours(int[] atomColours) {
         this.atomColours = atomColours;
@@ -151,16 +194,49 @@ public final class StructureRenderer implements Disposable {
             draw(cylinderShader, cylinder, camera);
         }
         for (Mesh mesh : meshes) {
-            draw(meshShader, mesh, camera);
+            draw(meshShader, mesh, camera, 1f);
         }
+        renderSurface(camera);
         Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
     }
 
+    /**
+     * Opaque surfaces draw normally. Transparent ones first write depth only, then blend only their nearest layer,
+     * so overlapping folds don't need sorting; blending keeps the framebuffer's alpha for screenshots.
+     */
+    private void renderSurface(Camera camera) {
+        if (surfaceMeshes.isEmpty() || surfaceOpacity <= 0f) {
+            return;
+        }
+        if (surfaceOpacity >= 1f) {
+            for (Mesh mesh : surfaceMeshes) {
+                draw(meshShader, mesh, camera, 1f);
+            }
+            return;
+        }
+        Gdx.gl.glColorMask(false, false, false, false);
+        for (Mesh mesh : surfaceMeshes) {
+            draw(meshShader, mesh, camera, surfaceOpacity);
+        }
+        Gdx.gl.glColorMask(true, true, true, true);
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFuncSeparate(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA, GL20.GL_ZERO, GL20.GL_ONE);
+        for (Mesh mesh : surfaceMeshes) {
+            draw(meshShader, mesh, camera, surfaceOpacity);
+        }
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
     private void draw(ShaderProgram shader, Mesh mesh, Camera camera) {
+        draw(shader, mesh, camera, 1f);
+    }
+
+    private void draw(ShaderProgram shader, Mesh mesh, Camera camera, float opacity) {
         shader.bind();
         shader.setUniformMatrix("u_projView", camera.combined);
         shader.setUniformf("u_cameraPos", camera.position);
         shader.setUniformf("u_lightDir", lightDir);
+        shader.setUniformf("u_opacity", opacity);
         mesh.render(shader, GL20.GL_TRIANGLES);
     }
 
@@ -190,6 +266,18 @@ public final class StructureRenderer implements Disposable {
             }
             meshes.get(m).setVertices(data);
         }
+        uploadSurfaceColours();
+    }
+
+    private void uploadSurfaceColours() {
+        for (int m = 0; m < surfaceMeshes.size(); m++) {
+            float[] data = surfaceData.get(m);
+            int[] atoms = surfaceAtoms.get(m);
+            for (int v = 0; v < atoms.length; v++) {
+                putColour(data, v * MESH_FLOATS + 6, atoms[v]);
+            }
+            surfaceMeshes.get(m).setVertices(data);
+        }
     }
 
     private void putColour(float[] data, int offset, int atom) {
@@ -215,6 +303,13 @@ public final class StructureRenderer implements Disposable {
         meshAtoms.clear();
     }
 
+    private void disposeSurface() {
+        surfaceMeshes.forEach(Mesh::dispose);
+        surfaceMeshes.clear();
+        surfaceData.clear();
+        surfaceAtoms.clear();
+    }
+
     private static ShaderProgram shader(String vertex) {
         String fragmentSource = Gdx.files.classpath("com/adcworks/jmvs/render/shaders/lit.frag").readString("UTF-8");
         String vertexSource = Gdx.files.classpath("com/adcworks/jmvs/render/shaders/" + vertex).readString("UTF-8");
@@ -229,6 +324,7 @@ public final class StructureRenderer implements Disposable {
     public void dispose() {
         disableInstancing();
         disposeMeshes();
+        disposeSurface();
         detailedSphere.dispose();
         coarseSphere.dispose();
         cylinder.dispose();

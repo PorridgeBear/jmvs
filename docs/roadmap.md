@@ -28,7 +28,7 @@ the *Status* line at the end of its section in the same pull request as the work
 | 8 | Biological assemblies | Biological context | High | M | — | ⏳ Planned |
 | 9 | Selections and mixed representations | Analysis | High | L | 7 | ⏳ Planned |
 | 10 | Ligand and binding-site view | Biological context | High | M | 9 | ⏳ Planned |
-| 11 | Molecular surfaces | Visualisation | High | L | 9 | ⏳ Planned |
+| 11 | Molecular surfaces | Visualisation | High | L | — | 🚧 In progress (`slice-11-molecular-surfaces`) |
 | 12 | Publication-quality rendering | Output | Medium | M | 3 | ⏳ Planned |
 | 13 | Sessions and scripting | Reproducibility | Medium | L | 9 | ⏳ Planned |
 | 14 | Density maps | Cryo-EM | Medium | L | 11 | ⏳ Planned |
@@ -43,7 +43,7 @@ flowchart LR
     S5[5 Computed SS] --> S6[6 Cartoon]
     S7[7 Measurements] --> S9[9 Selections]
     S9 --> S10[10 Ligand view]
-    S9 --> S11[11 Surfaces]
+    S9 -.-> S11[11 Surfaces]
     S9 --> S13[13 Sessions]
     S3 --> S12[12 Publication rendering]
     S11 --> S14[14 Density maps]
@@ -52,6 +52,7 @@ flowchart LR
     classDef done fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20
     classDef inProgress fill:#fff3c4,stroke:#f9a825,color:#5d4000
     class S0,S1 done
+    class S11 inProgress
 ```
 
 ## Slices
@@ -181,6 +182,7 @@ The foundation for most advanced features.
 - Selection model: by chain, residue range, residue name, ligand, water, element, or picked atoms; and/or/not.
 - A simple selection panel in the UI, and a text syntax (RasMol-like, e.g. `select ligand`).
 - Different display mode and colour per selection; hide/show.
+- Per-selection molecular surfaces (moved from slice 11).
 - ADR: selection model and how scenes are composed from several modes.
 
 **Done when** a protein can be shown as cartoon with its ligand as balls-and-sticks and waters hidden.
@@ -203,12 +205,14 @@ A common task: look at what a ligand touches.
 
 - Solvent-excluded and solvent-accessible surfaces computed in the background (e.g. marching cubes on a distance
   field).
-- Colour surfaces with the existing schemes; transparency; per-selection surfaces.
+- Colour surfaces with the existing schemes; transparency. Surfaces are an overlay on any display mode
+  ([ADR 0017](adr/0017-molecular-surfaces.md)).
+- Per-selection surfaces moved to slice 9, so this slice no longer depends on it (dashed in the diagram).
 - Later: hydrophobicity and electrostatic colouring.
 
 **Done when** `4hhb` shows a smooth surface in under a few seconds and can be coloured by chain.
 
-**Status: planned.**
+**Status: in progress** (branch `slice-11-molecular-surfaces`): `4hhb` SES builds in about 0.25 s.
 
 ### 12. Publication-quality rendering
 

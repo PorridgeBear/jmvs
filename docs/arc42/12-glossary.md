@@ -17,7 +17,11 @@ Terms from the [legacy glossary](legacy/12-glossary.md) still apply (mmCIF categ
 | Colour scheme | How atoms are coloured (CPK, Chain, Group, Structure, B-factor, Confidence); replaces legacy "paint mode" |
 | pLDDT | Predicted local distance difference test: AlphaFold's per-residue confidence (0–100), stored in the B-factor column |
 | Bounding sphere | Smallest enclosing sphere (approximate) used to frame the camera |
-| Spatial grid | Uniform 3D cell grid for fast neighbour search (bonding) |
+| Spatial grid | Uniform 3D cell grid for fast neighbour search (bonding, surface colouring) |
+| SES / SAS | Solvent-excluded (Connolly) surface: what a rolling solvent probe cannot reach. Solvent-accessible surface: the path of the probe's centre |
+| Probe | Sphere standing in for a solvent molecule, 1.4 Å for water |
+| Distance transform | Distance from every grid point to the nearest point of a set, computed in linear time |
+| Surface nets | Meshing a level set with one vertex per crossed grid cube (a dual of marching cubes) |
 | Icosphere | Sphere mesh made by subdividing an icosahedron; the instanced atom template |
 | Strangler migration | Building the new system next to the old one and removing the old one at parity |
 | Turn | Secondary structure element from `_struct_conf` with a `TURN_*` type |
