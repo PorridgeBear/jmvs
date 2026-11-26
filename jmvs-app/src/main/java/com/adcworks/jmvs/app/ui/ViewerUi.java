@@ -2,12 +2,18 @@ package com.adcworks.jmvs.app.ui;
 
 import com.adcworks.jmvs.app.ViewerController;
 import com.adcworks.jmvs.scene.colour.ColourScheme;
+import com.adcworks.jmvs.scene.colour.Legend;
+import com.adcworks.jmvs.scene.colour.Rgb;
 import com.adcworks.jmvs.scene.mode.DisplayMode;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.Align;
+import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.util.dialog.Dialogs;
 import com.kotcrab.vis.ui.widget.Menu;
 import com.kotcrab.vis.ui.widget.MenuBar;
@@ -16,10 +22,14 @@ import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTable;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 /**
- * Scene2D overlay: menu bar (File, Display, Colour, View, Help) and a status bar.
+ * Scene2D overlay: menu bar (File, Display, Colour, View, Help), a colour legend for schemes that have one, and a
+ * status bar.
  */
 public final class ViewerUi {
 
@@ -37,6 +47,7 @@ public final class ViewerUi {
     private static final String CURRENT = "> ";
     private static final String OTHER = "   ";
     private static final String HINT = "Open a structure with File > Open or drop a file on the window";
+    private static final int GRADIENT_STEPS = 32;
 
     private final Stage stage;
     private final ViewerController controller;
@@ -45,6 +56,8 @@ public final class ViewerUi {
     private final VisLabel status = new VisLabel(HINT);
     private final VisLabel selection = new VisLabel("");
     private final VisLabel fps = new VisLabel("");
+    private final VisTable legendPanel = new VisTable();
+    private Legend shownLegend;
     private String loadingName;
 
     public ViewerUi(Stage stage, ViewerController controller, Actions actions) {
@@ -105,11 +118,14 @@ public final class ViewerUi {
         statusBar.add(selection).expandX().right().padRight(12);
         statusBar.add(fps).right().padRight(6).width(60);
         fps.setAlignment(Align.right);
+        legendPanel.setBackground("window-bg");
+        legendPanel.pad(6);
+        legendPanel.setVisible(false);
 
         Table root = new Table();
         root.setFillParent(true);
         root.add(menuBar.getTable()).expandX().fillX().row();
-        root.add().expand().fill().row();
+        root.add(legendPanel).expand().bottom().left().pad(8).row();
         root.add(statusBar).expandX().fillX();
         stage.addActor(root);
         refresh();
@@ -156,6 +172,53 @@ public final class ViewerUi {
         status.setText(text);
         selection.setText(controller.selection().isPresent()
                 ? controller.describe(controller.selection().getAsInt()) : "");
+        showLegend(controller.legend().orElse(null));
+    }
+
+    private void showLegend(Legend legend) {
+        if (Objects.equals(legend, shownLegend)) {
+            return;
+        }
+        shownLegend = legend;
+        legendPanel.clearChildren();
+        legendPanel.setVisible(legend != null);
+        if (legend == null) {
+            return;
+        }
+        legendPanel.add(new VisLabel(legend.title())).left().colspan(2).padBottom(4).row();
+        switch (legend) {
+            case Legend.Bands bands -> bands.entries().forEach(e -> {
+                legendPanel.add(new Image(swatch(e.rgb()))).size(14).padRight(6);
+                legendPanel.add(new VisLabel(e.label())).left().row();
+            });
+            case Legend.Gradient gradient -> {
+                VisTable bar = new VisTable();
+                for (int i = 0; i < GRADIENT_STEPS; i++) {
+                    bar.add(new Image(swatch(sample(gradient.stops(), i / (GRADIENT_STEPS - 1f))))).size(5, 14);
+                }
+                legendPanel.add(bar).colspan(2).left().row();
+                VisTable labels = new VisTable();
+                labels.add(new VisLabel(String.format(Locale.ROOT, "%.1f", gradient.min()))).left().expandX();
+                labels.add(new VisLabel(String.format(Locale.ROOT, "%.1f", gradient.max()))).right();
+                legendPanel.add(labels).colspan(2).fillX();
+            }
+        }
+    }
+
+    private static Drawable swatch(int rgb) {
+        return VisUI.getSkin().newDrawable("white", new Color(Rgb.red(rgb), Rgb.green(rgb), Rgb.blue(rgb), 1));
+    }
+
+    /** Colour at {@code t} (0–1) along evenly spaced gradient stops. */
+    private static int sample(List<Integer> stops, float t) {
+        float position = t * (stops.size() - 1);
+        int i = Math.min((int) position, stops.size() - 2);
+        float f = position - i;
+        int a = stops.get(i);
+        int b = stops.get(i + 1);
+        return Rgb.of(Math.round(((a >> 16) & 0xFF) * (1 - f) + ((b >> 16) & 0xFF) * f),
+                Math.round(((a >> 8) & 0xFF) * (1 - f) + ((b >> 8) & 0xFF) * f),
+                Math.round((a & 0xFF) * (1 - f) + (b & 0xFF) * f));
     }
 
     private static MenuItem item(String text, Runnable action) {

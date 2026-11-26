@@ -3,6 +3,7 @@ package com.adcworks.jmvs.core.io;
 import com.adcworks.jmvs.core.chem.ElementTable;
 import com.adcworks.jmvs.core.model.SecondaryStructure;
 import com.adcworks.jmvs.core.model.Structure;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -33,6 +34,7 @@ class SampleFilesGoldenTest {
             "3nir.cif,     1,      6,      150,      784,   762,   13,    4,     110,       -10.142, 25.234",
             "1d3z.cif,     10,     10,     760,      12310, 12370, 220,   230,   0,         35.630,  17.911",
             "1aon.cif.gz,  1,      35,     8029,     58870, 59279, 3835,  1153,  196,       7.075,   77.793",
+            "AF-P69905-F1-model_v6.cif, 1, 1, 142, 1077, 0, 0, 0, 0, -19.915, 20.000",
     })
     void sampleMatchesGoldenValues(String file, int models, int chains, int residues, int atoms, int bonds,
                                    int helix, int sheet, long heterogen, float minX, float maxZ) throws Exception {

@@ -3,6 +3,8 @@ package com.adcworks.jmvs.scene.colour;
 import com.adcworks.jmvs.core.model.Atom;
 import com.adcworks.jmvs.core.model.Structure;
 
+import java.util.Optional;
+
 /**
  * Assigns a colour to every atom. Display modes never colour geometry themselves; renderers combine a mode's
  * {@link com.adcworks.jmvs.scene.Scene} with the colours from a scheme.
@@ -27,5 +29,12 @@ public interface ColourScheme {
             colours[atom.index()] = colourOf(structure, atom);
         }
         return colours;
+    }
+
+    /**
+     * Key to the colours for this structure, or empty if the scheme needs none (e.g. CPK).
+     */
+    default Optional<Legend> legend(Structure structure) {
+        return Optional.empty();
     }
 }

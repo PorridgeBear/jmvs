@@ -13,10 +13,23 @@ import java.util.Properties;
 
 /**
  * Colour tables parsed once from {@code jmvs.properties}: CPK colours by index, residue colours by name,
- * secondary-structure colours and the chain palette.
+ * secondary-structure colours, the chain palette, the B-factor gradient and the pLDDT confidence bands.
  */
 public record ColourTables(Map<Integer, Integer> cpk, Map<String, Integer> residues, int otherResidue,
-                           Map<SecondaryStructure, Integer> structure, List<Integer> chainPalette) {
+                           Map<SecondaryStructure, Integer> structure, List<Integer> chainPalette,
+                           BFactorColours bFactor, ConfidenceColours confidence) {
+
+    /**
+     * Gradient from {@code low} through {@code mid} to {@code high}; {@code missing} for atoms without a B-factor.
+     */
+    public record BFactorColours(int low, int mid, int high, int missing) {
+    }
+
+    /**
+     * AlphaFold DB pLDDT bands: very high (&gt; 90), confident (70–90), low (50–70), very low (&lt; 50).
+     */
+    public record ConfidenceColours(int veryHigh, int confident, int low, int veryLow) {
+    }
 
     private static final int WHITE = 0xFFFFFF;
 
@@ -65,7 +78,19 @@ public record ColourTables(Map<Integer, Integer> cpk, Map<String, Integer> resid
                 palette.add(Rgb.parse("chain.palette", entry));
             }
         }
-        return new ColourTables(cpk, residues, other == null ? WHITE : other, structure, palette);
+        return new ColourTables(cpk, residues, other == null ? WHITE : other, structure, palette,
+                new BFactorColours(required(p, "bfactor.low"), required(p, "bfactor.mid"),
+                        required(p, "bfactor.high"), required(p, "bfactor.missing")),
+                new ConfidenceColours(required(p, "confidence.veryhigh"), required(p, "confidence.confident"),
+                        required(p, "confidence.low"), required(p, "confidence.verylow")));
+    }
+
+    private static int required(Properties p, String key) {
+        String value = p.getProperty(key);
+        if (value == null) {
+            throw new ConfigurationException("Missing " + key);
+        }
+        return Rgb.parse(key, value);
     }
 
     public int cpkColour(int index) {

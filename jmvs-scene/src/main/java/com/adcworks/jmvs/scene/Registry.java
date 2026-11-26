@@ -34,7 +34,9 @@ public record Registry(List<DisplayMode> modes, DisplayMode defaultMode, List<Co
             "cpk", ColourSchemes::cpk,
             "chain", ColourSchemes::chain,
             "group", ColourSchemes::group,
-            "structure", ColourSchemes::structure);
+            "structure", ColourSchemes::structure,
+            "bfactor", ColourSchemes::bFactor,
+            "confidence", ColourSchemes::confidence);
 
     public Registry {
         modes = List.copyOf(modes);

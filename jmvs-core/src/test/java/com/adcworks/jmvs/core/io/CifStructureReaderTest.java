@@ -86,6 +86,34 @@ class CifStructureReaderTest {
     }
 
     @Test
+    void readsBFactorsAndMarksMissingOnesAsNaN(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("b.cif");
+        Files.writeString(file, """
+                data_B
+                loop_
+                _atom_site.group_PDB
+                _atom_site.id
+                _atom_site.type_symbol
+                _atom_site.label_atom_id
+                _atom_site.label_comp_id
+                _atom_site.label_asym_id
+                _atom_site.label_seq_id
+                _atom_site.Cartn_x
+                _atom_site.Cartn_y
+                _atom_site.Cartn_z
+                _atom_site.B_iso_or_equiv
+                ATOM 1 N N  GLY A 1 0.0 0.0 0.0 91.25
+                ATOM 2 C CA GLY A 1 1.4 0.0 0.0 ?
+                """, StandardCharsets.UTF_8);
+
+        Structure s = StructureReaders.defaults(ELEMENTS).read(file);
+
+        assertThat(s.atoms().get(0).bFactor()).isEqualTo(91.25f);
+        assertThat(s.atoms().get(1).hasBFactor()).isFalse();
+        assertThat(synthetic().atoms()).noneMatch(a -> a.hasBFactor());
+    }
+
+    @Test
     void rejectsMalformedInput(@TempDir Path dir) throws IOException {
         Path file = dir.resolve("broken.cif");
         Files.writeString(file, "data_X\nloop_\n_atom_site.id\n_atom_site.Cartn_x\n1 'unterminated\n",
